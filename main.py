@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import pygame
 import images
+import random
 import utils as ut
 import objects as objs
 # TODO: base object, player, gold, wall, bomb
@@ -126,13 +127,17 @@ class CollectorGame(GameMode):
         - Calculate objects' impact
         '''
         # GameMode.Logic(self, surface)
-        # for m_obj in self.map:
-        #     m_obj.logic()
-        # for d_obj in self.danger_objs:
-        #     d_obj.logic()
-        # for c_obj in self.collect_objs:
-        #     c_obj.logic()
-        pass
+
+        for m_obj in self.map:
+            m_obj.logic(self.player, self.map, self.danger_objs,
+                        self.bonus_objs)
+
+        self.player.logic(self.player, self.map,
+                          self.danger_objs, self.bonus_objs)
+        for d_obj in self.danger_objs:
+            d_obj.logic(self.player, self.map,
+                        self.danger_objs, self.bonus_objs)
+        # Destroy()
 
     def Draw(self, surface):
         '''Draw game field
@@ -150,8 +155,15 @@ class CollectorGame(GameMode):
         self.player.draw(surface)
 
     def Destroy(self):
-        for bad_object in self.bad_objs:
-            bad_object.destroy(self.player, self.map, self.danger_objs, self.collect_objs)
+        for b_obj in self.bonus_objs:
+            pass
+
+    def Init(self):
+        '''What to do when entering this mode'''
+        super().Init()
+        for x in range(10):
+            rand_pos = (random.randint(1, 19), random.randint(1, 19))
+            self.map.append(objs.Wall(rand_pos))
 
 
 def __main__():
@@ -171,7 +183,7 @@ def __main__():
             game_trigger = False
         CurrGame.Events(event)
         CurrGame.Action()
-        # CurrGame.Logic(screen)
+        CurrGame.Logic()
         CurrGame.Draw(screen)
         pygame.display.flip()
     NewUniverse.Finish()
