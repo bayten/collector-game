@@ -96,11 +96,13 @@ class Player(BasicObject):
                 if isinstance(map_obj, Wall):
                     x -= self.speed[0]
                     y -= self.speed[1]
+        gold, max_gold = self.gold
         for bonus_obj in bonuses:
             if bonus_obj.pos[0] == x and bonus_obj.pos[1] == y:
                 if isinstance(bonus_obj, Gold):
-                    self.gold += bonus_obj.inc_val
+                    gold += bonus_obj.inc_val
                     bonus_obj.is_dead = True
+        self.gold = gold, max_gold
         self.pos = (x, y)
 
 

@@ -79,10 +79,6 @@ class CollectorGame(GameMode):
         self.bonus_objs = bonus_objs
         self.win_mode = win_mode
 
-    def load_level(self, file_name):
-        '''Here we load level from filename'''
-        pass
-
     def Events(self, event):
         '''Event parser:
 
@@ -137,7 +133,7 @@ class CollectorGame(GameMode):
         for d_obj in self.danger_objs:
             d_obj.logic(self.player, self.map,
                         self.danger_objs, self.bonus_objs)
-        # Destroy()
+        self.Destroy()
 
     def Draw(self, surface):
         '''Draw game field
@@ -155,8 +151,37 @@ class CollectorGame(GameMode):
         self.player.draw(surface)
 
     def Destroy(self):
-        for b_obj in self.bonus_objs:
-            pass
+        for idx, m_obj in enumerate(self.map):
+            if m_obj.is_dead:
+                m_obj.destroy()
+                del self.map[idx]
+        for idx, b_obj in enumerate(self.bonus_objs):
+            if b_obj.is_dead:
+                b_obj.destroy()
+                del self.bonus_objs[idx]
+        for idx, d_obj in enumerate(self.danger_objs):
+            if d_obj.is_dead:
+                d_obj.destroy()
+                del self.danger_objs[idx]
+
+    def GameStateCheck(self):
+        '''Check for win-lose condition + spash screen'''
+        if self.player.is_dead:
+            # self.LoserSplashScreen()
+            print("HA-HA! LOSER!")
+            return True
+
+        elif self.win_mode == ut.GameWinCondition.COLLECT_ALL:
+            if self.player.gold[0] >= self.player.gold[1]:
+                # self.VictorySplashScreen()
+                print("CONGRATULATIONS!")
+                return True
+        elif self.win_mode == ut.GameWinCondition.KILL_ALL:
+            if len(self.danger_objs) == 0:
+                # self.VictorySplashScreen()
+                print("CONGRATULATIONS!")
+                return True
+        return False
 
     def Init(self):
         '''What to do when entering this mode'''
@@ -164,6 +189,11 @@ class CollectorGame(GameMode):
         for x in range(10):
             rand_pos = (random.randint(1, 19), random.randint(1, 19))
             self.map.append(objs.Wall(rand_pos))
+
+        for x in range(10):
+            rand_pos = (random.randint(1, 19), random.randint(1, 19))
+            self.bonus_objs.append(objs.Gold(rand_pos))
+        self.player.gold = (0, 10)
 
 
 def __main__():
@@ -185,7 +215,10 @@ def __main__():
         CurrGame.Action()
         CurrGame.Logic()
         CurrGame.Draw(screen)
+        game_state = CurrGame.GameStateCheck()
         pygame.display.flip()
+        if game_state is True:
+            break
     NewUniverse.Finish()
     pygame.quit()
 
