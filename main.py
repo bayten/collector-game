@@ -4,7 +4,6 @@ import images
 import random
 import utils as ut
 import objects as objs
-# TODO: base object, player, gold, wall, bomb
 
 
 def Init(sz, tile):
@@ -69,14 +68,14 @@ class Universe:
 class CollectorGame(GameMode):
     '''Game mode with active objects'''
 
-    def __init__(self, player=objs.Player(), map=[], danger_objs=[],
-                 bonus_objs=[], win_mode=ut.GameWinCondition.COLLECT_ALL):
+    def __init__(self, player=objs.Player(), map=[], enemies=[],
+                 tempies=[], win_mode=ut.GameWinCondition.COLLECT_ALL):
         '''New game with active objects'''
         GameMode.__init__(self)
         self.player = player
         self.map = map
-        self.danger_objs = danger_objs
-        self.bonus_objs = bonus_objs
+        self.enemies = enemies
+        self.tempies = tempies
         self.win_mode = win_mode
 
     def Events(self, event):
@@ -109,12 +108,12 @@ class CollectorGame(GameMode):
         GameMode.Events(self, event)
 
     def Action(self):
-        for m_obj in self.map:
-            m_obj.action()
-        for d_obj in self.danger_objs:
-            d_obj.action()
-        for b_obj in self.bonus_objs:
-            b_obj.action()
+        for map_object in self.map:
+            map_object.action()
+        for enemy in self.enemies:
+            enemy.action()
+        for temp_effect in self.tempies:
+            temp_effect.action()
         self.player.action()
 
     def Logic(self):
@@ -122,17 +121,16 @@ class CollectorGame(GameMode):
 
         - Calculate objects' impact
         '''
-        # GameMode.Logic(self, surface)
+        self.player.logic(self.player, self.map, self.enemies, self.tempies)
 
-        for m_obj in self.map:
-            m_obj.logic(self.player, self.map, self.danger_objs,
-                        self.bonus_objs)
+        for map_object in self.map:
+            map_object.logic(self.player, self.map, self.enemies, self.tempies)
 
-        self.player.logic(self.player, self.map,
-                          self.danger_objs, self.bonus_objs)
-        for d_obj in self.danger_objs:
-            d_obj.logic(self.player, self.map,
-                        self.danger_objs, self.bonus_objs)
+        for tmp_effect in self.tempies:
+            tmp_effect.logic(self.player, self.map, self.enemies, self.tempies)
+        for enemy in self.enemies:
+            enemy.logic(self.player, self.map, self.enemies, self.tempies)
+
         self.Destroy()
 
     def Draw(self, surface):
@@ -142,27 +140,30 @@ class CollectorGame(GameMode):
 
         '''
         GameMode.Draw(self, surface)
-        for m_obj in self.map:
-            m_obj.draw(surface)
-        for c_obj in self.bonus_objs:
-            c_obj.draw(surface)
-        for d_obj in self.danger_objs:
-            d_obj.draw(surface)
+        for map_object in self.map:
+            map_object.draw(surface)
+        for enemy in self.enemies:
+            enemy.draw(surface)
+        for tmp_effect in self.tempies:
+            tmp_effect.draw(surface)
+
         self.player.draw(surface)
 
     def Destroy(self):
-        for idx, m_obj in enumerate(self.map):
-            if m_obj.is_dead:
-                m_obj.destroy()
+        for idx, tmp_effect in enumerate(self.tempies):
+            if tmp_effect.duration <= 0:
+                tmp_effect.destroy()
+                del self.tempies[idx]
+
+        for idx, map_object in enumerate(self.map):
+            if map_object.is_dead:
+                map_object.destroy()
                 del self.map[idx]
-        for idx, b_obj in enumerate(self.bonus_objs):
-            if b_obj.is_dead:
-                b_obj.destroy()
-                del self.bonus_objs[idx]
-        for idx, d_obj in enumerate(self.danger_objs):
-            if d_obj.is_dead:
-                d_obj.destroy()
-                del self.danger_objs[idx]
+
+        for idx, enemy in enumerate(self.enemies):
+            if enemy.is_dead:
+                enemy.destroy()
+                del self.enemies[idx]
 
     def GameStateCheck(self):
         '''Check for win-lose condition + spash screen'''
@@ -177,7 +178,13 @@ class CollectorGame(GameMode):
                 print("CONGRATULATIONS!")
                 return True
         elif self.win_mode == ut.GameWinCondition.KILL_ALL:
-            if len(self.danger_objs) == 0:
+            if len(self.enemies) == 0:
+                # self.VictorySplashScreen()
+                print("CONGRATULATIONS!")
+                return True
+
+        elif self.win_mode == ut.GameWinCondition.GET_GOAL:
+            if self.player.gold[0] > 0:
                 # self.VictorySplashScreen()
                 print("CONGRATULATIONS!")
                 return True
@@ -192,7 +199,7 @@ class CollectorGame(GameMode):
 
         for x in range(10):
             rand_pos = (random.randint(1, 19), random.randint(1, 19))
-            self.bonus_objs.append(objs.Gold(rand_pos))
+            self.map.append(objs.Gold(rand_pos))
         self.player.gold = (0, 10)
 
 

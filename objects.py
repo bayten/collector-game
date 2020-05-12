@@ -29,7 +29,7 @@ class BasicObject:
         new_x, new_y = self.pos[0] + self.speed[0], self.pos[1] + self.speed[1]
         self.pos = (new_x, new_y)
 
-    def logic(self, player, map, dangers, bonuses):
+    def logic(self, player, map, enemies, tempies):
         '''Interact with game surface
 
         - Check if ball is out of surface, repose it and change acceleration''
@@ -73,7 +73,7 @@ class Player(BasicObject):
             surface.blit(self.img[int(self.draw_count)], draw_pos)
         self.draw_count = (self.draw_count+ut.ANIMATION_ITER) % 2
 
-    def logic(self, player, map, dangers, bonuses):
+    def logic(self, player, map, enemies, tempies):
         '''Interact with game surface
 
         - Check if ball is out of surface, repose it and change acceleration''
@@ -86,23 +86,6 @@ class Player(BasicObject):
             x = (x+ut.BSIZE[0]) % ut.BSIZE[0]
             y = (y+ut.BSIZE[1]) % ut.BSIZE[1]
 
-        for map_obj in map:
-            if map_obj.pos[0] == x and map_obj.pos[1] == y:
-                if isinstance(map_obj, Wall):
-                    x -= self.speed[0]
-                    y -= self.speed[1]
-        for map_obj in map:
-            if map_obj.pos[0] == x and map_obj.pos[1] == y:
-                if isinstance(map_obj, Wall):
-                    x -= self.speed[0]
-                    y -= self.speed[1]
-        gold, max_gold = self.gold
-        for bonus_obj in bonuses:
-            if bonus_obj.pos[0] == x and bonus_obj.pos[1] == y:
-                if isinstance(bonus_obj, Gold):
-                    gold += bonus_obj.inc_val
-                    bonus_obj.is_dead = True
-        self.gold = gold, max_gold
         self.pos = (x, y)
 
 
@@ -117,6 +100,28 @@ class Wall(BasicObject):
     def draw(self, surface):
         draw_pos = (self.pos[0] * ut.TILE, self.pos[1] * ut.TILE)
         surface.blit(self.img, draw_pos)
+
+    def logic(self, player, map, enemies, tempies):
+        '''Interact with game surface
+
+        - Check if ball is out of surface, repose it and change acceleration''
+        '''
+        if player.pos[0] == self.pos[0] and player.pos[1] == self.pos[1]:
+            # TODO: add bonuses
+            new_x = player.pos[0]-player.speed[0]
+            new_y = player.pos[1]-player.speed[1]
+            player.pos = (new_x, new_y)
+        for enemy in enemies:
+            if enemy.pos[0] == self.pos[0] and enemy.pos[1] == self.pos[1]:
+                new_x = enemy.pos[0] - enemy.speed[0]
+                new_y = enemy.pos[1] - enemy.speed[1]
+                enemy.pos = (new_x, new_y)
+                # TODO: add communication with other walls
+                enemy.speed = (-enemy.speed[0], -enemy.speed[1])
+
+        for temp_effect in tempies:
+            if temp_effect.includes(self.pos):
+                pass
 
 # class Enemy(DangerObject, Obstacle):
 #     def __init__(self, pos=(0, 0), ipos=(0, 0), speed=(0, 0), is_dead=False):
@@ -137,7 +142,30 @@ class Gold(BasicObject):
         super().__init__(images.MONEY_IMG, pos, speed)
         self.inc_val = inc_val
 
+    def logic(self, player, map, enemies, tempies):
+        '''Interact with game surface
+
+        - Check if ball is out of surface, repose it and change acceleration''
+        '''
+        if player.pos[0] == self.pos[0] and player.pos[1] == self.pos[1]:
+            player.gold = player.gold[0]+self.inc_val, player.gold[1]
+            self.is_dead = True
+
+        for temp_effect in tempies:
+            if temp_effect.includes(self.pos):
+                pass
+
 # class FireBonus(BonusObject):
+#     def __init__(self, pos=(0, 0), ipos=(0, 0), speed=(0, 0),
+#                  ispeed=(0, 0), inc_val=10):
+#         super().__init__(BONUS_IMG, pos, ipos, speed, ispeed, inc_val)
+
+# class LightningBonus(BonusObject):
+#     def __init__(self, pos=(0, 0), ipos=(0, 0), speed=(0, 0),
+#                  ispeed=(0, 0), inc_val=10):
+#         super().__init__(BONUS_IMG, pos, ipos, speed, ispeed, inc_val)
+
+# class CrystalBonus(BonusObject):
 #     def __init__(self, pos=(0, 0), ipos=(0, 0), speed=(0, 0),
 #                  ispeed=(0, 0), inc_val=10):
 #         super().__init__(BONUS_IMG, pos, ipos, speed, ispeed, inc_val)
