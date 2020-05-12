@@ -195,7 +195,7 @@ class CollectorGame(GameMode):
         super().Init()
         for x in range(10):
             rand_pos = (random.randint(1, 19), random.randint(1, 19))
-            self.map.append(objs.Wall(rand_pos))
+            self.map.append(objs.Spikes(rand_pos, False))
 
         for x in range(10):
             rand_pos = (random.randint(1, 19), random.randint(1, 19))

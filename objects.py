@@ -123,6 +123,38 @@ class Wall(BasicObject):
             if temp_effect.includes(self.pos):
                 pass
 
+
+class Spikes(BasicObject):
+    def __init__(self, pos=(0, 0), is_activated=True):
+        super().__init__(images.SPIKE_IMG, pos, (0, 0))
+        self.dimg = images.DSPIKE_IMG
+        self.is_triggered = False
+        self.is_activated = is_activated
+
+    def draw(self, surface):
+        draw_pos = (self.pos[0] * ut.TILE, self.pos[1] * ut.TILE)
+        if self.is_activated:
+            surface.blit(self.img, draw_pos)
+        else:
+            surface.blit(self.dimg, draw_pos)
+
+    def logic(self, player, map, enemies, tempies):
+        '''Interact with game surface
+
+        - Check if ball is out of surface, repose it and change acceleration''
+        '''
+        if player.pos[0] == self.pos[0] and player.pos[1] == self.pos[1]:
+            if self.is_activated:
+                player.is_dead = True
+            elif not self.is_triggered:
+                self.is_triggered = True
+        elif self.is_triggered and not self.is_activated:
+            self.is_activated = True
+
+        for temp_effect in tempies:
+            if temp_effect.includes(self.pos):
+                pass
+
 # class Enemy(DangerObject, Obstacle):
 #     def __init__(self, pos=(0, 0), ipos=(0, 0), speed=(0, 0), is_dead=False):
 #         super().__init__(ENEMY_IMG, pos, ipos, speed)
