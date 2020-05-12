@@ -1,8 +1,8 @@
 from enum import Enum
-
 BSIZE = 20, 20
 TILE = 40
 FPS = 10
+ANIMATION_ITER = 0.2
 
 
 class LVLObject(Enum):

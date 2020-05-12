@@ -20,8 +20,8 @@ class BasicObject:
     def draw(self, surface):
         '''Draw object on the surface'''
         draw_pos = (self.pos[0]*ut.TILE, self.pos[1]*ut.TILE)
-        surface.blit(self.img[self.draw_count], draw_pos)
-        self.draw_count = (self.draw_count+1) % len(self.img)
+        surface.blit(self.img[int(self.draw_count)], draw_pos)
+        self.draw_count = (self.draw_count+ut.ANIMATION_ITER) % len(self.img)
 
     def action(self):
         '''Proceed some action'''
@@ -67,10 +67,10 @@ class Player(BasicObject):
         '''Draw object on the surface'''
         draw_pos = (self.pos[0] * ut.TILE, self.pos[1] * ut.TILE)
         if (self.has_bonus):
-            surface.blit(self.bonus_img[self.draw_count], draw_pos)
+            surface.blit(self.bonus_img[int(self.draw_count)], draw_pos)
         else:
-            surface.blit(self.img[self.draw_count], draw_pos)
-        self.draw_count = (self.draw_count+1) % 2
+            surface.blit(self.img[int(self.draw_count)], draw_pos)
+        self.draw_count = (self.draw_count+ut.ANIMATION_ITER) % 2
 
     def logic(self, player, map, danger_objs, collect_objs):
         '''Interact with game surface
