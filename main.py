@@ -200,6 +200,12 @@ class CollectorGame(GameMode):
         for x in range(10):
             rand_pos = (random.randint(1, 19), random.randint(1, 19))
             self.map.append(objs.Gold(rand_pos))
+
+        for x in range(5):
+            rand_pos = (random.randint(1, 19), random.randint(1, 19))
+            rand_speed = (random.randint(-1, 1), random.randint(-1, 1))
+            self.enemies.append(objs.Enemy(rand_pos, rand_speed))
+
         self.player.gold = (0, 10)
 
 

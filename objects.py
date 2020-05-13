@@ -41,21 +41,6 @@ class BasicObject:
         pass
 
 
-# class Obstacle(BasicObject):
-#     pass
-
-# class DangerObject(BasicObject):
-#     def __init__(self, img, pos=(0, 0), ipos=(0, 0), speed=(0, 0),
-#                  ispeed=(0, 0)):
-#         super().__init__(img, pos, ipos, speed, ispeed)
-#
-# class BonusObject(BasicObject):
-#     def __init__(self, img, pos=(0, 0), ipos=(0, 0), speed=(0, 0),
-#                  ispeed=(0, 0), inc_val=1):
-#         super().__init__(img, pos, init_pos, speed, init_speed)
-#         self.inc_val = inc_val
-
-
 class Player(BasicObject):
     def __init__(self, pos=(0, 0), gold=(0, 0), fbounds=ut.FieldBounds.RECT):
         super().__init__(images.MAN_IMG, pos)
@@ -155,12 +140,64 @@ class Spikes(BasicObject):
             if temp_effect.includes(self.pos):
                 pass
 
-# class Enemy(DangerObject, Obstacle):
-#     def __init__(self, pos=(0, 0), ipos=(0, 0), speed=(0, 0), is_dead=False):
-#         super().__init__(ENEMY_IMG, pos, ipos, speed)
-#         self.dead_img = DEATH_IMG
-#         self.is_dead = is_dead
-#
+
+class Enemy(BasicObject):
+    def __init__(self, pos=(0, 0), speed=(0, 0), fbounds=ut.FieldBounds.RECT):
+        super().__init__(images.ENEMY_IMG, pos, speed)
+        self.fbounds = fbounds
+
+    def logic(self, player, map, enemies, tempies):
+        '''Interact with game surface
+
+        - Check if ball is out of surface, repose it and change acceleration''
+        '''
+        x, y = self.pos
+        vx, vy = self.speed
+        if self.fbounds == ut.FieldBounds.RECT:
+            if x < 0 or x >= ut.BSIZE[0]:
+                x = max(0, min(x, ut.BSIZE[0] - 1))
+                vx *= -1
+            if y < 0 or y >= ut.BSIZE[1]:
+                y = max(0, min(y, ut.BSIZE[1] - 1))
+                vy *= -1
+
+        elif self.fbounds == ut.FieldBounds.TORUS:
+            x = (x + ut.BSIZE[0]) % ut.BSIZE[0]
+            y = (y + ut.BSIZE[1]) % ut.BSIZE[1]
+        self.speed = vx, vy
+        self.pos = x, y
+
+        if player.pos[0] == self.pos[0] and player.pos[1] == self.pos[1]:
+            player.is_dead = True
+
+        for enemy in enemies:
+            if enemy is self:
+                continue
+            if enemy.pos[0] == self.pos[0] and enemy.pos[1] == self.pos[1]:
+                old_x = self.pos[0]-self.speed[0]
+                old_y = self.pos[1]-self.speed[1]
+                old_enemy_x = enemy.pos[0] - enemy.speed[0]
+                old_enemy_y = enemy.pos[1] - enemy.speed[1]
+
+                new_vx, new_vy = self.speed
+                new_enemy_vx, new_enemy_vy = enemy.speed
+                if old_x != old_enemy_x:
+                    new_vx *= -1
+                    new_enemy_vx *= -1
+                if old_y != old_enemy_y:
+                    new_vy *= -1
+                    new_enemy_vy *= -1
+
+                self.pos = old_x, old_y
+                self.speed = new_vx, new_vy
+
+                enemy.pos = old_enemy_x, old_enemy_y
+                enemy.speed = new_enemy_vx, new_enemy_vy
+
+        for temp_effect in tempies:
+            if temp_effect.includes(self.pos):
+                pass
+
 # class Bomb(DangerObject, Obstacle):
 #     def __init__(self, pos=(0, 0), ipos=(0, 0), speed=(0, 0),
 #                  is_lit = False):
