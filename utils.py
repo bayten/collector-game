@@ -1,7 +1,7 @@
 from enum import Enum
 BSIZE = 20, 20
 TILE = 40
-FPS = 5
+FPS = 70
 ANIMATION_ITER = 0.5
 
 

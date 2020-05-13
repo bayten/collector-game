@@ -6,14 +6,6 @@ import utils as ut
 import objects as objs
 
 
-def Init(sz, tile):
-    '''Turn PyGame on'''
-    global screen, screenrect
-    pygame.init()
-    screen = pygame.display.set_mode((sz[0] * tile, sz[1] * tile))
-    screenrect = screen.get_rect()
-
-
 class GameMode:
     '''Basic game mode'''
     def __init__(self):
@@ -51,18 +43,42 @@ class GameMode:
 class Universe:
     '''Game universe'''
 
-    def __init__(self, msec, tickevent=pygame.USEREVENT):
+    def __init__(self, sz, tile):
         '''Run an universe with msec tick'''
-        self.msec = msec
-        self.tickevent = tickevent
+        pygame.init()
+        self.screen = pygame.display.set_mode((sz[0] * tile, sz[1] * tile))
+        self.screenrect = self.screen.get_rect()
+        self.game_clock = pygame.time.Clock()
+        self.time_delay = int(1000./ut.FPS)
+        self.game_mode = None
+
+    def ProcessGame(self, game_mode):
+        self.game_mode = game_mode
+        self.Start()
+        self.MainLoop()
+        self.Finish()
 
     def Start(self):
         '''Start running'''
-        pygame.time.set_timer(self.tickevent, self.msec)
+        self.game_mode.Init()
+
+    def MainLoop(self):
+        game_trigger = True
+        while game_trigger:
+            events = pygame.event.get()
+            game_trigger = self.game_mode.Events(events)
+            self.game_mode.Action()
+            self.game_mode.Logic()
+            self.game_mode.Draw(self.screen)
+            game_state = self.game_mode.GameStateCheck()
+            pygame.display.flip()
+            if game_state is True:
+                break
+            self.game_clock.tick(self.time_delay)
 
     def Finish(self):
         '''Shut down an universe'''
-        pygame.time.set_timer(self.tickevent, 0)
+        pygame.quit()
 
 
 class CollectorGame(GameMode):
@@ -78,34 +94,37 @@ class CollectorGame(GameMode):
         self.tempies = tempies
         self.win_mode = win_mode
 
-    def Events(self, event):
+    def Events(self, events):
         '''Event parser:
 
         - Perform object action after every tick'''
         vx, vy = self.player.speed
+        for event in events:
+            if event.type is pygame.QUIT:
+                return False
+            if event.type is pygame.KEYDOWN and event.key == pygame.K_LEFT:
+                vx = -1
+            elif event.type is pygame.KEYDOWN and event.key == pygame.K_RIGHT:
+                vx = 1
 
-        if event.type is pygame.KEYDOWN and event.key == pygame.K_LEFT:
-            vx = -1
-        elif event.type is pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-            vx = 1
+            if event.type is pygame.KEYDOWN and event.key == pygame.K_UP:
+                vy = -1
+            elif event.type is pygame.KEYDOWN and event.key == pygame.K_DOWN:
+                vy = 1
 
-        if event.type is pygame.KEYDOWN and event.key == pygame.K_UP:
-            vy = -1
-        elif event.type is pygame.KEYDOWN and event.key == pygame.K_DOWN:
-            vy = 1
+            if event.type is pygame.KEYUP and event.key == pygame.K_LEFT:
+                vx = 0
+            if event.type is pygame.KEYUP and event.key == pygame.K_RIGHT:
+                vx = 0
 
-        if event.type is pygame.KEYUP and event.key == pygame.K_LEFT:
-            vx = 0
-        if event.type is pygame.KEYUP and event.key == pygame.K_RIGHT:
-            vx = 0
-
-        if event.type is pygame.KEYUP and event.key == pygame.K_UP:
-            vy = 0
-        if event.type is pygame.KEYUP and event.key == pygame.K_DOWN:
-            vy = 0
+            if event.type is pygame.KEYUP and event.key == pygame.K_UP:
+                vy = 0
+            if event.type is pygame.KEYUP and event.key == pygame.K_DOWN:
+                vy = 0
 
         self.player.speed = (vx, vy)
-        GameMode.Events(self, event)
+        GameMode.Events(self, events)
+        return True
 
     def Action(self):
         for map_object in self.map:
@@ -211,29 +230,8 @@ class CollectorGame(GameMode):
 
 def __main__():
     '''Main game code'''
-    # global Game
-
-    Init(ut.BSIZE, ut.TILE)
-    NewUniverse = Universe(int(1000./ut.FPS))
-    NewUniverse.Start()
-
-    CurrGame = CollectorGame()
-    CurrGame.Init()
-    game_trigger = True
-    while game_trigger:
-        event = pygame.event.wait()
-        if event.type == pygame.QUIT:
-            game_trigger = False
-        CurrGame.Events(event)
-        CurrGame.Action()
-        CurrGame.Logic()
-        CurrGame.Draw(screen)
-        game_state = CurrGame.GameStateCheck()
-        pygame.display.flip()
-        if game_state is True:
-            break
-    NewUniverse.Finish()
-    pygame.quit()
+    NewUniverse = Universe(ut.BSIZE, ut.TILE)
+    NewUniverse.ProcessGame(CollectorGame())
 
 
 if __name__ == '__main__':
