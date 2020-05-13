@@ -99,41 +99,60 @@ class CollectorGame(GameMode):
 
         - Perform object action after every tick'''
         vx, vy = self.player.speed
+        sight = self.player.sight
+
         for event in events:
             if event.type is pygame.QUIT:
                 return False
+
             if event.type is pygame.KEYDOWN and event.key == pygame.K_LEFT:
                 vx = -1
+                sight = (-1, 0)
             elif event.type is pygame.KEYDOWN and event.key == pygame.K_RIGHT:
                 vx = 1
-
+                sight = (1, 0)
             if event.type is pygame.KEYDOWN and event.key == pygame.K_UP:
                 vy = -1
+                sight = (0, -1)
             elif event.type is pygame.KEYDOWN and event.key == pygame.K_DOWN:
                 vy = 1
+                sight = (0, 1)
 
             if event.type is pygame.KEYUP and event.key == pygame.K_LEFT:
                 vx = 0
             if event.type is pygame.KEYUP and event.key == pygame.K_RIGHT:
                 vx = 0
-
             if event.type is pygame.KEYUP and event.key == pygame.K_UP:
                 vy = 0
             if event.type is pygame.KEYUP and event.key == pygame.K_DOWN:
                 vy = 0
 
-        self.player.speed = (vx, vy)
+            if event.type is pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                self.player.set_bomb = True
+            if event.type is pygame.KEYDOWN and event.key == pygame.K_3:
+                self.player.duration = 3
+            if event.type is pygame.KEYDOWN and event.key == pygame.K_4:
+                self.player.duration = 4
+            if event.type is pygame.KEYDOWN and event.key == pygame.K_5:
+                self.player.duration = 5
+            if event.type is pygame.KEYDOWN and event.key == pygame.K_6:
+                self.player.duration = 6
+            if event.type is pygame.KEYDOWN and event.key == pygame.K_7:
+                self.player.duration = 7
+
+        self.player.speed = vx, vy
+        self.player.sight = sight
         GameMode.Events(self, events)
         return True
 
     def Action(self):
         for map_object in self.map:
-            map_object.action()
+            map_object.action(self.map, self.tempies)
         for enemy in self.enemies:
-            enemy.action()
+            enemy.action(self.map, self.tempies)
         for temp_effect in self.tempies:
-            temp_effect.action()
-        self.player.action()
+            temp_effect.action(self.map, self.tempies)
+        self.player.action(self.map, self.tempies)
 
     def Logic(self):
         '''Game logic
@@ -170,18 +189,18 @@ class CollectorGame(GameMode):
 
     def Destroy(self):
         for idx, tmp_effect in enumerate(self.tempies):
-            if tmp_effect.duration <= 0:
-                tmp_effect.destroy()
+            if tmp_effect.is_dead:
+                tmp_effect.destroy(self.map, self.tempies)
                 del self.tempies[idx]
 
         for idx, map_object in enumerate(self.map):
             if map_object.is_dead:
-                map_object.destroy()
+                map_object.destroy(self.map, self.tempies)
                 del self.map[idx]
 
         for idx, enemy in enumerate(self.enemies):
             if enemy.is_dead:
-                enemy.destroy()
+                enemy.destroy(self.map, self.tempies)
                 del self.enemies[idx]
 
     def GameStateCheck(self):
@@ -226,6 +245,7 @@ class CollectorGame(GameMode):
             self.enemies.append(objs.Enemy(rand_pos, rand_speed))
 
         self.player.gold = (0, 10)
+        self.player.bombs = (10, 10)
 
 
 def __main__():

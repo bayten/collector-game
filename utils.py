@@ -3,6 +3,7 @@ BSIZE = 20, 20
 TILE = 40
 FPS = 70
 ANIMATION_ITER = 0.5
+ENEMY_SLOW = 2
 
 
 class GameWinCondition(Enum):
@@ -14,3 +15,8 @@ class GameWinCondition(Enum):
 class FieldBounds(Enum):
     RECT = 0,
     TORUS = 1
+
+
+class ExplosionType(Enum):
+    CROSS = 0,
+    CIRCLE = 1
