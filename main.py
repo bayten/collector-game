@@ -4,6 +4,7 @@ import images
 import random
 import utils as ut
 import objects as objs
+import gui
 
 
 class GameMode:
@@ -14,7 +15,7 @@ class GameMode:
         - Initialize field'''
         pass
 
-    def Events(self, event):
+    def Events(self, event, screen):
         '''Event parser'''
         pass
 
@@ -66,7 +67,7 @@ class Universe:
         game_trigger = True
         while game_trigger:
             events = pygame.event.get()
-            game_trigger = self.game_mode.Events(events)
+            game_trigger = self.game_mode.Events(events, self.screen)
             self.game_mode.Action()
             self.game_mode.Logic()
             self.game_mode.Draw(self.screen)
@@ -75,6 +76,7 @@ class Universe:
             if game_state is True:
                 break
             self.game_clock.tick(self.time_delay)
+        self.game_mode.Leave()
 
     def Finish(self):
         '''Shut down an universe'''
@@ -94,7 +96,7 @@ class CollectorGame(GameMode):
         self.tempies = tempies
         self.win_mode = win_mode
 
-    def Events(self, events):
+    def Events(self, events, screen):
         '''Event parser:
 
         - Perform object action after every tick'''
@@ -103,7 +105,9 @@ class CollectorGame(GameMode):
 
         for event in events:
             if event.type is pygame.QUIT:
-                return False
+                dialog = gui.CloseDialog()
+                if dialog.MainLoop(screen):
+                    return False
 
             if event.type is pygame.KEYDOWN and event.key == pygame.K_LEFT:
                 vx = -1
@@ -142,7 +146,7 @@ class CollectorGame(GameMode):
 
         self.player.speed = vx, vy
         self.player.sight = sight
-        GameMode.Events(self, events)
+        GameMode.Events(self, events, screen)
         return True
 
     def Action(self):
