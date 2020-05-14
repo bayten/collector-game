@@ -71,7 +71,7 @@ class Universe:
             self.game_mode.Action()
             self.game_mode.Logic()
             self.game_mode.Draw(self.screen)
-            game_state = self.game_mode.GameStateCheck()
+            game_state = self.game_mode.GameStateCheck(self.screen)
             pygame.display.flip()
             if game_state is True:
                 break
@@ -86,13 +86,16 @@ class Universe:
 class CollectorGame(GameMode):
     '''Game mode with active objects'''
 
-    def __init__(self, player=objs.Player(), map=[], enemies=[],
-                 tempies=[], win_mode=ut.GameWinCondition.COLLECT_ALL):
+    def __init__(self, player=objs.Player((0, 0), (3, 3), (0, 10)), map=[],
+                 enemies=[], tempies=[],
+                 win_mode=ut.GameWinCondition.COLLECT_ALL):
         '''New game with active objects'''
         GameMode.__init__(self)
         self.player = player
         self.map = map
+        self.init_map = [map_object.copy() for map_object in self.map]
         self.enemies = enemies
+        self.init_enemies = [enemy.copy() for enemy in self.enemies]
         self.tempies = tempies
         self.win_mode = win_mode
 
@@ -207,28 +210,58 @@ class CollectorGame(GameMode):
                 enemy.destroy(self.map, self.tempies)
                 del self.enemies[idx]
 
-    def GameStateCheck(self):
+    def Reset(self):
+        self.player.reset()
+        self.map = [map_object.copy() for map_object in self.init_map]
+        self.enemies = [enemy.copy() for enemy in self.init_enemies]
+        self.tempies = []
+
+    def GameStateCheck(self, screen):
         '''Check for win-lose condition + spash screen'''
         if self.player.is_dead:
-            # self.LoserSplashScreen()
-            print("HA-HA! LOSER!")
+            title = 'Поражение'
+            text1 = 'Вы проиграли'
+            advice_id = random.randint(0, len(ut.UselessAdvices)-1)
+            advice = 'СОВЕТ:' + ut.UselessAdvices[advice_id]
+            splash = gui.SplashScreen(title, text1, advice)
+            if splash.MainLoop(screen):
+                self.Reset()
+                return False
             return True
 
         elif self.win_mode == ut.GameWinCondition.COLLECT_ALL:
             if self.player.gold[0] >= self.player.gold[1]:
-                # self.VictorySplashScreen()
-                print("CONGRATULATIONS!")
+                title = 'Победа'
+                text1 = 'Вы собрали всё золото!'
+                congrats_id = random.randint(0, len(ut.UselessCongrats) - 1)
+                congrats = ut.UselessCongrats[congrats_id]
+                splash = gui.SplashScreen(title, text1, congrats)
+                if splash.MainLoop(screen):
+                    self.Reset()
+                    return False
                 return True
         elif self.win_mode == ut.GameWinCondition.KILL_ALL:
             if len(self.enemies) == 0:
-                # self.VictorySplashScreen()
-                print("CONGRATULATIONS!")
+                title = 'Победа'
+                text1 = 'Вы зверски всех убили!'
+                congrats_id = random.randint(0, len(ut.UselessCongrats) - 1)
+                congrats = ut.UselessCongrats[congrats_id]
+                splash = gui.SplashScreen(title, text1, congrats)
+                if splash.MainLoop(screen):
+                    self.Reset()
+                    return False
                 return True
 
         elif self.win_mode == ut.GameWinCondition.GET_GOAL:
             if self.player.gold[0] > 0:
-                # self.VictorySplashScreen()
-                print("CONGRATULATIONS!")
+                title = 'Победа'
+                text1 = 'Вы достигли цели!'
+                congrats_id = random.randint(0, len(ut.UselessCongrats) - 1)
+                congrats = ut.UselessCongrats[congrats_id]
+                splash = gui.SplashScreen(title, text1, congrats)
+                if splash.MainLoop(screen):
+                    self.Reset()
+                    return False
                 return True
         return False
 
@@ -248,8 +281,8 @@ class CollectorGame(GameMode):
             rand_speed = (random.randint(-1, 1), random.randint(-1, 1))
             self.enemies.append(objs.Enemy(rand_pos, rand_speed))
 
-        self.player.gold = (0, 10)
-        self.player.bombs = (10, 10)
+        self.init_map = self.map.copy()
+        self.init_enemies = self.enemies.copy()
 
 
 def __main__():

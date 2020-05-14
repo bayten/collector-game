@@ -23,6 +23,7 @@ CBONUS_IMG = [image.load(r'images/cbonus'+str(x)+r'.png') for x in range(4)]
 # gui images
 CURSOR_IMG = image.load(r'images/cursor.png')
 BUTT_TMP_IMG = image.load(r'images/button_template.png')
+BUTT_TMP_PRESSED_IMG = image.load(r'images/button_template_pressed.png')
 BUTT_ACC_IMG = image.load(r'images/button_accept.png')
 BUTT_CLS_IMG = image.load(r'images/button_close.png')
 BUTT_BCK_IMG = image.load(r'images/button_back.png')

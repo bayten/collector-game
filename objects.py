@@ -13,9 +13,14 @@ class BasicObject:
             self.draw_count = pos[1] % len(img)
         self.is_dead = False
 
+    def copy(self):
+        copy_object = BasicObject(self.img.copy(), self.pos, self.speed)
+        return copy_object
+
     def reset(self):
         self.pos = self.init_pos[0], self.init_pos[1]
         self.speed = self.init_speed[0], self.init_speed[1]
+        self.is_dead = False
 
     def draw(self, surface):
         '''Draw object on the surface'''
@@ -52,9 +57,24 @@ class Player(BasicObject):
 
         self.set_bomb = False
         self.bombs = bombs
-        self.duration = 4
+        self.init_bombs = bombs
+
+        self.duration = 5
 
         self.gold = gold
+        self.init_gold = gold
+
+        self.bonus = None
+
+    def reset(self):
+        super().reset()
+        self.sight = (0, 0)
+
+        self.set_bomb = False
+        self.bombs = self.init_bombs
+        self.duration = 5
+
+        self.gold = self.init_gold
 
         self.bonus = None
 
@@ -104,6 +124,10 @@ class Wall(BasicObject):
             super().__init__(images.WALL_IMG, pos, (0, 0))
         self.is_super = is_super
 
+    def copy(self):
+        copy_object = Wall(self.pos, self.is_super)
+        return copy_object
+
     def draw(self, surface):
         draw_pos = (self.pos[0] * ut.TILE, self.pos[1] * ut.TILE)
         surface.blit(self.img, draw_pos)
@@ -143,6 +167,16 @@ class Spikes(BasicObject):
         self.dimg = images.DSPIKE_IMG
         self.is_triggered = False
         self.is_activated = is_activated
+        self.is_init_activated = is_activated
+
+    def copy(self):
+        copy_object = Spikes(self.pos, self.is_activated)
+        copy_object.is_triggered = self.is_triggered
+        return copy_object
+
+    def reset(self):
+        super().reset()
+        self.is_activated = self.is_init_activated
 
     def draw(self, surface):
         draw_pos = (self.pos[0] * ut.TILE, self.pos[1] * ut.TILE)
@@ -174,6 +208,10 @@ class Enemy(BasicObject):
         super().__init__(images.ENEMY_IMG, pos, speed)
         self.fbounds = fbounds
         self.slow_count = 0
+
+    def copy(self):
+        copy_object = Enemy(self.pos, self.speed, self.fbounds)
+        return copy_object
 
     def action(self, map, tempies):
         '''Proceed some action'''
@@ -371,9 +409,13 @@ class Bomb(BasicObject):
 
 
 class Gold(BasicObject):
-    def __init__(self, pos=(0, 0), speed=(0, 0), inc_val=1):
-        super().__init__(images.MONEY_IMG, pos, speed)
+    def __init__(self, pos=(0, 0), inc_val=1):
+        super().__init__(images.MONEY_IMG, pos, (0, 0))
         self.inc_val = inc_val
+
+    def copy(self):
+        copy_object = Gold(self.pos, self.inc_val)
+        return copy_object
 
     def logic(self, player, map, enemies, tempies):
         '''Interact with game surface

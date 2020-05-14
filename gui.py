@@ -86,14 +86,18 @@ class FixedImage(GuiObject):
 class Button(GuiObject):
     def __init__(self, pos, size, tname, image, image_pressed=None, text=None):
         super().__init__(pos, size, tname)
-        self.image = image
+
+        self.image = pygame.transform.scale(image, size)
         if image_pressed:
-            self.image_pressed = image_pressed
+            self.image_pressed = pygame.transform.scale(image_pressed, size)
+
         else:
-            self.image_pressed = image
+            self.image_pressed = self.image
 
         if text:
-            self.text = TextBox(pos, size, *text)
+            text_pos = pos[0] + 0.08*size[0], pos[1] + 0.25*size[1]
+            text_size = 0.85*size[0], 0.8*size[1]
+            self.text = TextBox(text_pos, text_size, *text)
         else:
             self.text = None
 
@@ -157,7 +161,7 @@ class MenuMode:
             self.focused = focus_candidates[0]
             self.gui[self.focused].focus = True
 
-    def Events(self, events):
+    def Events(self, events, screen):
         '''Event parser'''
         for event in events:
             if event.type is pygame.QUIT:
@@ -219,11 +223,10 @@ class CloseDialog(MenuMode):
         super().__init__(splash, (pos_x, pos_y), [text, cls, acc], triggers)
 
     def MainLoop(self, screen):
-        print('Close Dialog main loop!')
         self.Init(screen)
         while True:
             events = pygame.event.get()
-            self.Events(events)
+            self.Events(events, screen)
             self.Draw(screen)
             pygame.display.flip()
 
@@ -234,9 +237,82 @@ class CloseDialog(MenuMode):
                 self.Leave()
                 return True
 
-    def Events(self, events):
+    def Events(self, events, screen):
         '''Event parser'''
         for event in events:
+            if event.type is pygame.MOUSEBUTTONDOWN:
+                self.update_focus(event.pos)
+                if self.focused:
+                    self.pressed_down = True
+                    self.gui[self.focused].init_pdown(event.pos, self.triggers)
+            elif event.type is pygame.MOUSEMOTION and self.pressed_down:
+                if self.focused:
+                    self.gui[self.focused].next_pdown(event.pos, self.triggers)
+            elif event.type is pygame.MOUSEBUTTONUP:
+                if self.focused:
+                    self.gui[self.focused].init_pup(event.pos, self.triggers)
+                    self.pressed_down = False
+        return True
+
+
+class SplashScreen(MenuMode):
+    def __init__(self, title_text, text1, text2):
+        triggers = [('restart', 0, 2), ('menu', 0, 2)]
+
+        dialog_size = (500, 500)
+        pos_x = ut.BSIZE[0]*ut.TILE/2-dialog_size[0]/2
+        pos_y = ut.BSIZE[1]*ut.TILE/2-dialog_size[1]/2
+
+        menu_pos = pos_x+25, pos_y+400
+        res_pos = pos_x+275, pos_y+400
+        title_pos = pos_x, pos_y
+        text1_pos = pos_x+50, pos_y+150
+        text2_pos = pos_x+50, pos_y+300
+
+        b_size = (200, 100)
+
+        menu_text = ('МЕНЮ', GAME_FONT)
+        restart_text = ('ЗАНОВО', GAME_FONT)
+        menu = Button(menu_pos, b_size, 'menu', images.BUTT_TMP_IMG,
+                      images.BUTT_TMP_PRESSED_IMG, menu_text)
+        restart = Button(res_pos, b_size, 'restart', images.BUTT_TMP_IMG,
+                         images.BUTT_TMP_PRESSED_IMG, restart_text)
+
+        title_text_box = TextBox(title_pos, (500, 200), title_text, GAME_FONT)
+        text1_box = TextBox(text1_pos, (400, 100), text1, GAME_FONT)
+        text2_box = TextBox(text2_pos, (400, 100), text2, GAME_FONT)
+
+        splash = pygame.transform.scale(images.SPLASH_IMG, dialog_size)
+        my_gui = (title_text_box, text1_box, text2_box, menu, restart)
+        super().__init__(splash, (pos_x, pos_y), my_gui, triggers)
+
+    def MainLoop(self, screen):
+        self.Init(screen)
+        while True:
+            events = pygame.event.get()
+            game_trigger = self.Events(events, screen)
+
+            if not game_trigger:
+                self.Leave()
+                return False
+
+            self.Draw(screen)
+            pygame.display.flip()
+
+            if self.triggers[0][1] == 1:
+                self.Leave()
+                return True
+            elif self.triggers[1][1] == 1:
+                self.Leave()
+                return False
+
+    def Events(self, events, screen):
+        '''Event parser'''
+        for event in events:
+            if event.type is pygame.QUIT:
+                dialog = CloseDialog()
+                if dialog.MainLoop(screen):
+                    return False
             if event.type is pygame.MOUSEBUTTONDOWN:
                 self.update_focus(event.pos)
                 if self.focused:
