@@ -22,7 +22,7 @@ Event = pygame.event.Event
 Clock = pygame.time.Clock
 Trigger = Tuple[str, int, int]
 
-GAME_FONT = 'FortunataCYR.ttf'
+GAME_FONT = 'CollectorGame/FortunataCYR.ttf'
 
 UselessAdvices: List[str] = [
     'Шипы опасны',

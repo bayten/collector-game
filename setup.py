@@ -7,7 +7,7 @@ with open('requirements.txt', "r", encoding="utf8") as requirements:
     requires = requirements.read().splitlines()
 
 setuptools.setup(
-    name="collector-game",
+    name="CollectorGame",
     version="0.0.1",
     author="Baytekov Nikita",
     author_email="nvbaytekov@gmail.com",

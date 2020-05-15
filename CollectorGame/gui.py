@@ -5,9 +5,9 @@ This is module, which contains GUI Classes.
 """
 
 import pygame  # type: ignore
-import images
-import utils as ut
 from typing import List, Tuple, Optional
+import CollectorGame.images as images
+import CollectorGame.utils as ut
 
 
 class GuiObject:
