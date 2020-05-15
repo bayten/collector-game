@@ -1,37 +1,47 @@
 #!/usr/bin/env python3
-import pygame
+import pygame  # type: ignore
 import images
 import random
 import utils as ut
 import objects as objs
+from typing import List, Optional
 import gui
+
+DEF_PLAYER_CONFIG = ((0, 0), (3, 3), (0, 10))
 
 
 class GameMode:
     '''Basic game mode'''
-    def __init__(self):
+    def __init__(self) -> None:
         '''Set game mode up
 
         - Initialize field'''
         pass
 
-    def Events(self, event, screen):
+    def Events(self, event: ut.Event,
+               screen: ut.Image) -> bool:
         '''Event parser'''
-        pass
+        return False
 
-    def Draw(self, screen):
+    def Draw(self, screen: ut.Image) -> None:
         '''Draw game field'''
         screen.blit(self.back_img, (0, 0))
 
-    def Logic(self, screen):
+    def Logic(self) -> None:
         '''Game logic: what to calculate'''
         pass
 
-    def Leave(self):
+    def Action(self) -> None:
+        pass
+
+    def GameStateCheck(self, screen: ut.Image) -> bool:
+        return False
+
+    def Leave(self) -> None:
         '''What to do when leaving this mode'''
         pass
 
-    def Init(self):
+    def Init(self) -> None:
         '''What to do when entering this mode'''
         wx = ut.BSIZE[0]*ut.TILE
         wy = ut.BSIZE[1]*ut.TILE
@@ -44,24 +54,26 @@ class GameMode:
 class Universe:
     '''Game universe'''
 
-    def __init__(self, sz, tile):
+    def __init__(self, sz: ut.Size,
+                 tile: int):
         '''Run an universe with msec tick'''
         pygame.init()
-        self.screen = pygame.display.set_mode((sz[0] * tile, sz[1] * tile))
-        self.screenrect = self.screen.get_rect()
-        self.game_clock = pygame.time.Clock()
-        self.time_delay = int(1000./ut.FPS)
-        self.game_mode = None
+        screen_size: ut.Size = (int(sz[0] * tile), int(sz[1] * tile))
+        self.screen: ut.Image = pygame.display.set_mode(screen_size)
+        self.game_clock: ut.Clock = pygame.time.Clock()
+        self.time_delay: int = int(1000./ut.FPS)
+        self.game_mode: Optional[GameMode] = None
 
-    def ProcessGame(self, game_mode):
+    def ProcessGame(self, game_mode: GameMode) -> None:
         self.game_mode = game_mode
         self.Start()
         self.MainLoop()
         self.Finish()
 
-    def Start(self):
+    def Start(self) -> None:
         '''Start running'''
-        self.game_mode.Init()
+        if self.game_mode:
+            self.game_mode.Init()
 
     def MainLoop(self):
         game_trigger = True
@@ -86,20 +98,33 @@ class Universe:
 class CollectorGame(GameMode):
     '''Game mode with active objects'''
 
-    def __init__(self, player=objs.Player((0, 0), (3, 3), (0, 10)), map=[],
-                 enemies=[], tempies=[],
-                 win_mode=ut.GameWinCondition.COLLECT_ALL):
+    def __init__(self, player: objs.Player = objs.Player(*DEF_PLAYER_CONFIG),
+                 level_map: Optional[List[objs.BasicObject]] = None,
+                 enemies: Optional[List[objs.Enemy]] = None,
+                 tempies: Optional[List[objs.TempEffect]] = None,
+                 win_mode: ut.WinCondition = ut.WinCondition.COLLECT_ALL
+                 ) -> None:
         '''New game with active objects'''
         GameMode.__init__(self)
-        self.player = player
-        self.map = map
-        self.init_map = [map_object.copy() for map_object in self.map]
-        self.enemies = enemies
-        self.init_enemies = [enemy.copy() for enemy in self.enemies]
-        self.tempies = tempies
-        self.win_mode = win_mode
+        self.player: objs.Player = player
 
-    def Events(self, events, screen):
+        self.level_map: Optional[List[objs.BasicObject]] = level_map
+        map_copy = None
+        if self.level_map:
+            map_copy = [map_object.copy() for map_object in self.level_map]
+        self.init_map: Optional[List[objs.BasicObject]] = map_copy
+
+        self.enemies: Optional[List[objs.Enemy]] = enemies
+        enemy_copy = None
+        if self.enemies:
+            enemy_copy = [enemy.copy() for enemy in self.enemies]
+        self.init_enemies: Optional[List[objs.Enemy]] = enemy_copy
+
+        self.tempies: Optional[List[objs.TempEffect]] = tempies
+        self.win_mode: ut.WinCondition = win_mode
+
+    def Events(self, events: ut.Event,
+               screen: ut.Image) -> bool:
         '''Event parser:
 
         - Perform object action after every tick'''
@@ -152,40 +177,59 @@ class CollectorGame(GameMode):
         GameMode.Events(self, events, screen)
         return True
 
-    def Action(self):
-        for map_object in self.map:
-            map_object.action(self.map, self.tempies)
-        for enemy in self.enemies:
-            enemy.action(self.map, self.tempies)
-        for temp_effect in self.tempies:
-            temp_effect.action(self.map, self.tempies)
-        self.player.action(self.map, self.tempies)
+    def Action(self) -> None:
+        if self.level_map is None or \
+           self.tempies is None or \
+           self.enemies is None:
+            return
 
-    def Logic(self):
+        for map_object in self.level_map:
+            map_object.action(self.level_map, self.tempies)
+
+        for enemy in self.enemies:
+            enemy.action(self.level_map, self.tempies)
+
+        for temp_effect in self.tempies:
+            temp_effect.action(self.level_map, self.tempies)
+
+        self.player.action(self.level_map, self.tempies)
+
+    def Logic(self) -> None:
         '''Game logic
 
         - Calculate objects' impact
         '''
-        self.player.logic(self.player, self.map, self.enemies, self.tempies)
+        if self.level_map is None or \
+           self.tempies is None or \
+           self.enemies is None:
+            return
 
-        for map_object in self.map:
-            map_object.logic(self.player, self.map, self.enemies, self.tempies)
+        in_params = (self.player, self.level_map, self.enemies, self.tempies)
+        self.player.logic(*in_params)
+
+        for map_object in self.level_map:
+            map_object.logic(*in_params)
 
         for tmp_effect in self.tempies:
-            tmp_effect.logic(self.player, self.map, self.enemies, self.tempies)
+            tmp_effect.logic(*in_params)
         for enemy in self.enemies:
-            enemy.logic(self.player, self.map, self.enemies, self.tempies)
+            enemy.logic(*in_params)
 
         self.Destroy()
 
-    def Draw(self, surface):
+    def Draw(self, surface: ut.Image) -> None:
         '''Draw game field
 
         - Draw all the objects on the top of game field
 
         '''
+        if self.level_map is None or \
+           self.tempies is None or \
+           self.enemies is None:
+            return
+
         GameMode.Draw(self, surface)
-        for map_object in self.map:
+        for map_object in self.level_map:
             map_object.draw(surface)
         for enemy in self.enemies:
             enemy.draw(surface)
@@ -194,29 +238,38 @@ class CollectorGame(GameMode):
 
         self.player.draw(surface)
 
-    def Destroy(self):
+    def Destroy(self) -> None:
+        if self.level_map is None or \
+           self.tempies is None or \
+           self.enemies is None:
+            return
+
         for idx, tmp_effect in enumerate(self.tempies):
             if tmp_effect.is_dead:
-                tmp_effect.destroy(self.map, self.tempies)
+                tmp_effect.destroy(self.level_map, self.tempies)
                 del self.tempies[idx]
 
-        for idx, map_object in enumerate(self.map):
+        for idx, map_object in enumerate(self.level_map):
             if map_object.is_dead:
-                map_object.destroy(self.map, self.tempies)
-                del self.map[idx]
+                map_object.destroy(self.level_map, self.tempies)
+                del self.level_map[idx]
 
         for idx, enemy in enumerate(self.enemies):
             if enemy.is_dead:
-                enemy.destroy(self.map, self.tempies)
+                enemy.destroy(self.level_map, self.tempies)
                 del self.enemies[idx]
 
-    def Reset(self):
+    def Reset(self) -> None:
+        if self.init_map is None or \
+           self.init_enemies is None:
+            return
+
         self.player.reset()
-        self.map = [map_object.copy() for map_object in self.init_map]
+        self.level_map = [map_object.copy() for map_object in self.init_map]
         self.enemies = [enemy.copy() for enemy in self.init_enemies]
         self.tempies = []
 
-    def GameStateCheck(self, screen):
+    def GameStateCheck(self, screen: ut.Image) -> bool:
         '''Check for win-lose condition + spash screen'''
         if self.player.is_dead:
             title = 'Поражение'
@@ -229,7 +282,7 @@ class CollectorGame(GameMode):
                 return False
             return True
 
-        elif self.win_mode == ut.GameWinCondition.COLLECT_ALL:
+        elif self.win_mode == ut.WinCondition.COLLECT_ALL:
             if self.player.gold[0] >= self.player.gold[1]:
                 title = 'Победа'
                 text1 = 'Вы собрали всё золото!'
@@ -240,7 +293,7 @@ class CollectorGame(GameMode):
                     self.Reset()
                     return False
                 return True
-        elif self.win_mode == ut.GameWinCondition.KILL_ALL:
+        elif self.win_mode == ut.WinCondition.KILL_ALL and self.enemies:
             if len(self.enemies) == 0:
                 title = 'Победа'
                 text1 = 'Вы зверски всех убили!'
@@ -252,7 +305,7 @@ class CollectorGame(GameMode):
                     return False
                 return True
 
-        elif self.win_mode == ut.GameWinCondition.GET_GOAL:
+        elif self.win_mode == ut.WinCondition.GET_GOAL:
             if self.player.gold[0] > 0:
                 title = 'Победа'
                 text1 = 'Вы достигли цели!'
@@ -268,21 +321,25 @@ class CollectorGame(GameMode):
     def Init(self):
         '''What to do when entering this mode'''
         super().Init()
-        for x in range(10):
-            rand_pos = (random.randint(1, 19), random.randint(1, 19))
-            self.map.append(objs.Spikes(rand_pos, False))
+        self.level_map = []
+        self.enemies = []
+        self.tempies = []
 
         for x in range(10):
             rand_pos = (random.randint(1, 19), random.randint(1, 19))
-            self.map.append(objs.Gold(rand_pos))
+            self.level_map.append(objs.Spikes(rand_pos, False))
+
+        for x in range(10):
+            rand_pos = (random.randint(1, 19), random.randint(1, 19))
+            self.level_map.append(objs.Gold(rand_pos))
 
         for x in range(5):
             rand_pos = (random.randint(1, 19), random.randint(1, 19))
             rand_speed = (random.randint(-1, 1), random.randint(-1, 1))
             self.enemies.append(objs.Enemy(rand_pos, rand_speed))
 
-        self.init_map = self.map.copy()
-        self.init_enemies = self.enemies.copy()
+        self.init_map = [m.copy() for m in self.level_map]
+        self.init_enemies = [e.copy() for e in self.enemies]
 
 
 def __main__():
