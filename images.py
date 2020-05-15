@@ -1,3 +1,9 @@
+'''
+images.py -- images submodule
+=============================
+This is module, where all image resources are loaded for future use.
+'''
+
 from pygame import image as im  # type: ignore
 from typing import List
 import utils as ut

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+main.py -- main module
+======================
+This is main module, which contains main game classes and launches the game.
+"""
+
 import pygame  # type: ignore
 import images
 import random
@@ -11,38 +17,40 @@ DEF_PLAYER_CONFIG = ((0, 0), (3, 3), (0, 10))
 
 
 class GameMode:
-    '''Basic game mode'''
+    """Basic game mode"""
     def __init__(self) -> None:
-        '''Set game mode up
-
-        - Initialize field'''
+        """Set game mode up"""
+        self.back_img: Optional[ut.Image] = None
         pass
 
     def Events(self, event: ut.Event,
                screen: ut.Image) -> bool:
-        '''Event parser'''
+        """Event parser"""
         return False
 
     def Draw(self, screen: ut.Image) -> None:
-        '''Draw game field'''
-        screen.blit(self.back_img, (0, 0))
+        """Draw game objects"""
+        if self.back_img:
+            screen.blit(self.back_img, (0, 0))
 
     def Logic(self) -> None:
-        '''Game logic: what to calculate'''
+        """Process interactions of game objects"""
         pass
 
     def Action(self) -> None:
+        """Process actions of game objects"""
         pass
 
     def GameStateCheck(self, screen: ut.Image) -> bool:
+        """ Check for win-lose condition """
         return False
 
     def Leave(self) -> None:
-        '''What to do when leaving this mode'''
+        """What to do when leaving this mode"""
         pass
 
     def Init(self) -> None:
-        '''What to do when entering this mode'''
+        """What to do when entering this mode"""
         wx = ut.BSIZE[0]*ut.TILE
         wy = ut.BSIZE[1]*ut.TILE
         self.back_img = pygame.Surface((wx, wy))
@@ -52,11 +60,11 @@ class GameMode:
 
 
 class Universe:
-    '''Game universe'''
+    """Game universe: manager of game modes"""
 
     def __init__(self, sz: ut.Size,
                  tile: int):
-        '''Run an universe with msec tick'''
+        """Run an universe with display and game clock"""
         pygame.init()
         screen_size: ut.Size = (int(sz[0] * tile), int(sz[1] * tile))
         self.screen: ut.Image = pygame.display.set_mode(screen_size)
@@ -65,17 +73,19 @@ class Universe:
         self.game_mode: Optional[GameMode] = None
 
     def ProcessGame(self, game_mode: GameMode) -> None:
+        """Play given game mode"""
         self.game_mode = game_mode
         self.Start()
         self.MainLoop()
         self.Finish()
 
     def Start(self) -> None:
-        '''Start running'''
+        """Start running game mode"""
         if self.game_mode:
             self.game_mode.Init()
 
     def MainLoop(self):
+        """Process in loop all game mode's procedures"""
         game_trigger = True
         while game_trigger:
             events = pygame.event.get()
@@ -91,12 +101,12 @@ class Universe:
         self.game_mode.Leave()
 
     def Finish(self):
-        '''Shut down an universe'''
+        """Finish game mode"""
         pygame.quit()
 
 
 class CollectorGame(GameMode):
-    '''Game mode with active objects'''
+    """Primary game mode with objects"""
 
     def __init__(self, player: objs.Player = objs.Player(*DEF_PLAYER_CONFIG),
                  level_map: Optional[List[objs.BasicObject]] = None,
@@ -104,7 +114,7 @@ class CollectorGame(GameMode):
                  tempies: Optional[List[objs.TempEffect]] = None,
                  win_mode: ut.WinCondition = ut.WinCondition.COLLECT_ALL
                  ) -> None:
-        '''New game with active objects'''
+        """New game with objects"""
         GameMode.__init__(self)
         self.player: objs.Player = player
 
@@ -125,9 +135,7 @@ class CollectorGame(GameMode):
 
     def Events(self, events: ut.Event,
                screen: ut.Image) -> bool:
-        '''Event parser:
-
-        - Perform object action after every tick'''
+        """Event parser: process all events from previous tick"""
         vx, vy = self.player.speed
         sight = self.player.sight
 
@@ -178,6 +186,7 @@ class CollectorGame(GameMode):
         return True
 
     def Action(self) -> None:
+        """Process actions of all game objects"""
         if self.level_map is None or \
            self.tempies is None or \
            self.enemies is None:
@@ -195,10 +204,7 @@ class CollectorGame(GameMode):
         self.player.action(self.level_map, self.tempies)
 
     def Logic(self) -> None:
-        '''Game logic
-
-        - Calculate objects' impact
-        '''
+        """Process logic of all game objects"""
         if self.level_map is None or \
            self.tempies is None or \
            self.enemies is None:
@@ -218,11 +224,7 @@ class CollectorGame(GameMode):
         self.Destroy()
 
     def Draw(self, surface: ut.Image) -> None:
-        '''Draw game field
-
-        - Draw all the objects on the top of game field
-
-        '''
+        """Draw all game objects"""
         if self.level_map is None or \
            self.tempies is None or \
            self.enemies is None:
@@ -239,6 +241,7 @@ class CollectorGame(GameMode):
         self.player.draw(surface)
 
     def Destroy(self) -> None:
+        """Eliminate all marked objects from the game"""
         if self.level_map is None or \
            self.tempies is None or \
            self.enemies is None:
@@ -260,6 +263,7 @@ class CollectorGame(GameMode):
                 del self.enemies[idx]
 
     def Reset(self) -> None:
+        """Restart game from the very beginning"""
         if self.init_map is None or \
            self.init_enemies is None:
             return
@@ -270,7 +274,7 @@ class CollectorGame(GameMode):
         self.tempies = []
 
     def GameStateCheck(self, screen: ut.Image) -> bool:
-        '''Check for win-lose condition + spash screen'''
+        """Check for win-lose condition + splash screen"""
         if self.player.is_dead:
             title = 'Поражение'
             text1 = 'Вы проиграли'
@@ -319,7 +323,7 @@ class CollectorGame(GameMode):
         return False
 
     def Init(self):
-        '''What to do when entering this mode'''
+        """What to do when entering this mode"""
         super().Init()
         self.level_map = []
         self.enemies = []
@@ -343,7 +347,7 @@ class CollectorGame(GameMode):
 
 
 def __main__():
-    '''Main game code'''
+    """Main game code"""
     NewUniverse = Universe(ut.BSIZE, ut.TILE)
     NewUniverse.ProcessGame(CollectorGame())
 

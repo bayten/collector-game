@@ -1,3 +1,9 @@
+"""
+gui.py -- GUI submodule
+=======================
+This is module, which contains GUI Classes.
+"""
+
 import pygame  # type: ignore
 import images
 import utils as ut
@@ -5,8 +11,10 @@ from typing import List, Tuple, Optional
 
 
 class GuiObject:
+    """General entity of basic GUI object"""
     def __init__(self, pos: ut.Coord, size: ut.Size,
                  trigger_name: Optional[str] = None) -> None:
+        """Initialise GUI object"""
         self.pos: ut.Coord = pos
         self.size: ut.Size = size
         self.focus: bool = False
@@ -14,6 +22,7 @@ class GuiObject:
         self.trigger_name: Optional[str] = trigger_name
 
     def includes(self, mouse_pos: ut.Coord) -> bool:
+        """Check if given position is included in object's area"""
         if self.pos[0] <= mouse_pos[0] <= self.pos[0]+self.size[0] and\
            self.pos[1] <= mouse_pos[1] <= self.pos[1]+self.size[1]:
             return True
@@ -21,17 +30,21 @@ class GuiObject:
 
     def init_pdown(self, mouse_pos: ut.Coord,
                    triggers: Optional[List[ut.Trigger]] = None) -> None:
+        """Process initial event of mouse key pressed down"""
         pass
 
     def next_pdown(self, mouse_pos: ut.Coord,
                    triggers: Optional[List[ut.Trigger]] = None) -> None:
+        """Process subsequent event of not-released pressed down mouse key"""
         pass
 
     def init_pup(self, mouse_pos: ut.Coord,
                  triggers: Optional[List[ut.Trigger]] = None) -> None:
+        """Process event of mouse key being released"""
         pass
 
     def can_focus(self, mouse_pos: ut.Coord) -> bool:
+        """Check if this GUI object can get focused with given mouse pos"""
         if self.includes(mouse_pos):
             return True
         return False
@@ -39,10 +52,12 @@ class GuiObject:
     def draw(self, surface: ut.Image,
              mouse_pos: ut.Coord,
              triggers: Optional[List[ut.Trigger]] = None) -> None:
+        """Draw GUI object on the given surface"""
         pass
 
 
 class TextBox(GuiObject):
+    """Primitive textbox element"""
     def __init__(self, pos: ut.Coord,
                  size: ut.Size,
                  text: str,
@@ -50,6 +65,7 @@ class TextBox(GuiObject):
                  color: pygame.Color = (0, 0, 0),
                  color_s: pygame.Color = (0, 0, 0),
                  color_p: pygame.Color = (0, 0, 0)) -> None:
+        """Initialise textbox"""
         super().__init__(pos, size)
         self.text: str = text
         self.color: pygame.Color = color
@@ -66,11 +82,13 @@ class TextBox(GuiObject):
         self.font: pygame.font.Font = pygame.font.Font(font_path, text_size-1)
 
     def can_focus(self, mouse_pos: ut.Coord) -> bool:
+        """Textbox cannot get focused in any case"""
         return False
 
     def draw(self, surface: ut.Image,
              mouse_pos: ut.Coord,
              triggers: Optional[List[ut.Trigger]] = None) -> None:
+        """Draw textbox on the given surface"""
         if self.is_pressed:
             text_surface = self.font.render(self.text, True, self.color_p)
         if self.includes(mouse_pos):
@@ -81,30 +99,36 @@ class TextBox(GuiObject):
 
 
 class FixedImage(GuiObject):
+    """Primitive image element"""
     def __init__(self, pos: ut.Coord,
                  size: ut.Size,
                  image: Optional[ut.Image] = None) -> None:
+        """Initialise FixedImage"""
         super().__init__(pos, size)
         self.image: Optional[ut.Image] = None
         if image:
             self.image = pygame.transform.scale(image, self.size)
 
     def can_focus(self, mouse_pos: ut.Coord) -> bool:
+        """Fixed image cannot get focused in any case"""
         return False
 
     def draw(self, surface: ut.Image,
              mouse_pos: ut.Coord,
              triggers: Optional[List[ut.Trigger]] = None) -> None:
+        """Draw FixedImage on the given surface"""
         surface.blit(self.image, self.pos)
 
 
 class Button(GuiObject):
+    """Multifunctional button (optionally with text caption)"""
     def __init__(self, pos: ut.Coord,
                  size: ut.Size,
                  tname: str,
                  image: ut.Image,
                  image_pressed: Optional[ut.Image] = None,
                  text: Optional[Tuple[str, str]] = None) -> None:
+        """Initialise Button element"""
         super().__init__(pos, size, tname)
 
         self.image: ut.Image = pygame.transform.scale(image, size)
@@ -121,16 +145,14 @@ class Button(GuiObject):
 
     def init_pdown(self, mouse_pos: ut.Coord,
                    triggers: Optional[List[ut.Trigger]] = None) -> None:
+        """Process initial event of mouse key pressed down"""
         self.is_pressed = True
         if self.text:
             self.text.is_pressed = True
 
-    def next_pdown(self, mouse_pos: ut.Coord,
-                   triggers: Optional[List[ut.Trigger]] = None) -> None:
-        pass
-
     def init_pup(self, mouse_pos: ut.Coord,
                  triggers: Optional[List[ut.Trigger]] = None) -> None:
+        """Process event of mouse key being released"""
         self.is_pressed = False
         if self.text:
             self.text.is_pressed = False
@@ -144,6 +166,7 @@ class Button(GuiObject):
     def draw(self, surface: ut.Image,
              mouse_pos: ut.Coord,
              triggers: Optional[List[ut.Trigger]] = None) -> None:
+        """Draw Button element on the given surface"""
         if self.is_pressed:
             if self.image_pressed:
                 surface.blit(self.image_pressed, self.pos)
@@ -156,14 +179,12 @@ class Button(GuiObject):
 
 
 class MenuMode:
-    '''Basic ьутг mode'''
+    """Basic menu mode"""
     def __init__(self, menu_img: ut.Image,
                  menu_pos: ut.Coord = (0, 0),
                  gui: Optional[List[GuiObject]] = None,
                  triggers: Optional[List[ut.Trigger]] = None) -> None:
-        '''Set game mode up
-
-        - Initialize field'''
+        """Set menu mode up"""
 
         self.menu_img: ut.Image = menu_img
         self.back_img: Optional[ut.Image] = None
@@ -175,6 +196,7 @@ class MenuMode:
         self.triggers: Optional[List[ut.Trigger]] = triggers
 
     def update_focus(self, mouse_pos: ut.Coord) -> None:
+        """Calculate new focused GUI object, if possible"""
         if self.gui is None:
             return
 
@@ -196,7 +218,7 @@ class MenuMode:
 
     def Events(self, events: List[ut.Event],
                screen: ut.Image) -> bool:
-        '''Event parser'''
+        """Event parser: process all events from previous tick"""
         for event in events:
             if event.type is pygame.QUIT:
                 return False
@@ -216,7 +238,7 @@ class MenuMode:
         return True
 
     def Draw(self, screen: ut.Image) -> None:
-        '''Draw game field'''
+        """Draw all GUI objects"""
         mouse_pos = pygame.mouse.get_pos()
         screen.blit(self.back_img, (0, 0))
         screen.blit(self.menu_img, self.menu_pos)
@@ -227,18 +249,20 @@ class MenuMode:
         screen.blit(self.cursor_img, mouse_pos)
 
     def Leave(self) -> Optional[List[ut.Trigger]]:
-        '''What to do when leaving this mode'''
+        """What to do when leaving this mode"""
         pygame.mouse.set_visible(True)
         return self.triggers
 
     def Init(self, screen: ut.Image) -> None:
-        '''What to do when entering this mode'''
+        """What to do when entering this mode"""
         pygame.mouse.set_visible(False)
         self.back_img = screen.copy()
 
 
 class CloseDialog(MenuMode):
+    """Primitive close dialog to process QUIT event"""
     def __init__(self) -> None:
+        """Initialise CloseDialog"""
         dialog_size = (400, 300)
         pos_x = int(ut.BSIZE[0]*ut.TILE/2-dialog_size[0]/2)
         pos_y = int(ut.BSIZE[1]*ut.TILE/2-dialog_size[1]/2)
@@ -260,6 +284,7 @@ class CloseDialog(MenuMode):
         self.triggers: List[ut.Trigger] = triggers
 
     def MainLoop(self, screen: ut.Image) -> bool:
+        """Subsequently process all procedures for CloseDialog"""
         self.Init(screen)
         while True:
             events = pygame.event.get()
@@ -276,7 +301,7 @@ class CloseDialog(MenuMode):
 
     def Events(self, events: List[ut.Event],
                screen: ut.Image) -> bool:
-        '''Event parser'''
+        """Event parser: process all events from previous tick"""
         for event in events:
             if event.type is pygame.MOUSEBUTTONDOWN:
                 self.update_focus(event.pos)
@@ -294,10 +319,15 @@ class CloseDialog(MenuMode):
 
 
 class SplashScreen(MenuMode):
+    """Primitive splash screen
+
+    Show results of your game + give options to restart or quit.
+    """
+
     def __init__(self, title_text: str,
                  text1: str,
                  text2: str) -> None:
-
+        """Initialise SplashScreen"""
         dialog_size = (500, 500)
         pos_x = int(ut.BSIZE[0]*ut.TILE/2-dialog_size[0]/2)
         pos_y = int(ut.BSIZE[1]*ut.TILE/2-dialog_size[1]/2)
@@ -331,6 +361,7 @@ class SplashScreen(MenuMode):
         self.triggers: List[ut.Trigger] = triggers
 
     def MainLoop(self, screen: ut.Image) -> bool:
+        """Subsequently process all procedures for SplashScreen"""
         self.Init(screen)
         while True:
             events = pygame.event.get()
@@ -352,7 +383,7 @@ class SplashScreen(MenuMode):
 
     def Events(self, events: ut.Event,
                screen: ut.Image) -> bool:
-        '''Event parser'''
+        """Event parser: process all events from previous tick"""
         for event in events:
             if event.type is pygame.QUIT:
                 dialog = CloseDialog()

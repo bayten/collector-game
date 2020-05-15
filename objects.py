@@ -1,12 +1,21 @@
+"""
+objects.py -- submodule for game object classes
+===============================================
+This is module, which mainly consists of game object classes.
+"""
+
 import utils as ut
 from typing import List, Tuple
 import images
 
 
 class BasicObject:
+    """Basic game object with position, speed and self-image"""
+
     def __init__(self, img: List[ut.Image],
                  pos: ut.Coord = (0, 0),
                  speed: ut.Coord = (0, 0)) -> None:
+        """Initialise game object"""
         self.img: List[ut.Image] = img
         self.pos: ut.Coord = pos
         self.init_pos: ut.Coord = pos
@@ -16,23 +25,25 @@ class BasicObject:
         self.is_dead: bool = False
 
     def copy(self) -> 'BasicObject':
+        """Create new copy of object"""
         copy_object = BasicObject(self.img.copy(), self.pos, self.speed)
         return copy_object
 
     def reset(self) -> None:
+        """Reset parameters of game object to initial values"""
         self.pos = self.init_pos[0], self.init_pos[1]
         self.speed = self.init_speed[0], self.init_speed[1]
         self.is_dead = False
 
     def draw(self, surface: ut.Image) -> None:
-        '''Draw object on the surface'''
+        """Draw object on the surface"""
         draw_pos = (self.pos[0]*ut.TILE, self.pos[1]*ut.TILE)
         surface.blit(self.img[int(self.draw_count)], draw_pos)
         self.draw_count = (self.draw_count+ut.ANIMATION_ITER) % len(self.img)
 
     def action(self, level_map: List['BasicObject'],
                tempies: List['TempEffect']) -> None:
-        '''Proceed some action'''
+        """Perform action of game object"""
         new_x: int = self.pos[0] + self.speed[0]
         new_y: int = self.pos[1] + self.speed[1]
         self.pos = (new_x, new_y)
@@ -41,43 +52,47 @@ class BasicObject:
               level_map: List['BasicObject'],
               enemies: List['Enemy'],
               tempies: List['TempEffect']) -> None:
-        '''Interact with game surface
-
-        - Check if ball is out of surface, repose it and change acceleration''
-        '''
+        """Process interaction of game object with other objects"""
         pass
 
     def destroy(self, level_map: List['BasicObject'],
                 tempies: List['TempEffect']) -> None:
-        ''''''
+        """Prepare for future deletion of game object"""
         pass
 
 
 class TempEffect(BasicObject):
+    """Basic temporary game effect object"""
+
     def __init__(self, img: List[ut.Image],
                  pos: ut.Coord,
                  speed: ut.Coord) -> None:
+        """Initialise temporary game effect"""
         super().__init__(img, pos, speed)
 
     def includes(self, pos: ut.Coord) -> bool:
+        """Check if given position is included in effect's area"""
         return False
 
 
 class Enemy(BasicObject):
+    """Basic enemy object"""
     def __init__(self, pos: ut.Coord = (0, 0),
                  speed: ut.Coord = (0, 0),
                  fbounds: ut.FieldBounds = ut.FieldBounds.RECT) -> None:
+        """Initialise Enemy object"""
         super().__init__(images.ENEMY_IMG, pos, speed)
         self.fbounds: ut.FieldBounds = fbounds
         self.slow_count: int = 0
 
     def copy(self) -> 'Enemy':
+        """Create new copy of Enemy object"""
         copy_object = Enemy(self.pos, self.speed, self.fbounds)
         return copy_object
 
     def action(self, level_map: List[BasicObject],
                tempies: List[TempEffect]) -> None:
-        '''Proceed some action'''
+        """Perform enemy action"""
         self.slow_count = (self.slow_count+1) % ut.ENEMY_SLOW
         x, y = self.pos
         if self.slow_count == 0:
@@ -89,10 +104,7 @@ class Enemy(BasicObject):
               level_map: List[BasicObject],
               enemies: List['Enemy'],
               tempies: List[TempEffect]) -> None:
-        '''Interact with game surface
-
-        - Check if ball is out of surface, repose it and change acceleration''
-        '''
+        """Process enemy interaction with other objects"""
         x, y = self.pos
         vx, vy = self.speed
         if self.fbounds == ut.FieldBounds.RECT:
@@ -138,10 +150,12 @@ class Enemy(BasicObject):
 
 
 class Player(BasicObject):
+    """Object, representing player"""
     def __init__(self, pos: ut.Coord = (0, 0),
                  bombs: Tuple[int, int] = (0, 3),
                  gold: Tuple[int, int] = (0, 0),
                  fbounds: ut.FieldBounds = ut.FieldBounds.RECT) -> None:
+        """Initialise Player object"""
         super().__init__(images.MAN_IMG, pos)
         self.fbounds: ut.FieldBounds = fbounds
         self.sight: ut.Coord = (0, 0)
@@ -161,6 +175,7 @@ class Player(BasicObject):
         self.bonus: None = None
 
     def reset(self) -> None:
+        """Reset parameters of player to initial values"""
         super().reset()
         self.sight = (0, 0)
 
@@ -173,7 +188,7 @@ class Player(BasicObject):
         self.bonus = None
 
     def draw(self, surface: ut.Image) -> None:
-        '''Draw object on the surface'''
+        """Draw player on the surface"""
         draw_pos = (self.pos[0] * ut.TILE, self.pos[1] * ut.TILE)
         if self.bonus is None:
             surface.blit(self.img[int(self.draw_count)], draw_pos)
@@ -184,7 +199,7 @@ class Player(BasicObject):
 
     def action(self, level_map: List[BasicObject],
                tempies: List[TempEffect]) -> None:
-        '''Proceed some action'''
+        """Perform player's action"""
         new_x, new_y = self.pos[0] + self.speed[0], self.pos[1] + self.speed[1]
         self.pos = (new_x, new_y)
         if self.set_bomb and level_map:
@@ -200,10 +215,7 @@ class Player(BasicObject):
               level_map: List[BasicObject],
               enemies: List[Enemy],
               tempies: List[TempEffect]) -> None:
-        '''Interact with game surface
-
-        - Check if ball is out of surface, repose it and change acceleration''
-        '''
+        """Process player interaction with other objects"""
         x, y = self.pos
         if self.fbounds == ut.FieldBounds.RECT:
             x = max(0, min(x, ut.BSIZE[0]-1))
@@ -216,7 +228,9 @@ class Player(BasicObject):
 
 
 class Wall(BasicObject):
+    """Wall game object """
     def __init__(self, pos: ut.Coord = (0, 0), is_super: bool = False) -> None:
+        """Initialise Wall object"""
         if is_super:
             super().__init__([images.SWALL_IMG], pos, (0, 0))
         else:
@@ -224,10 +238,12 @@ class Wall(BasicObject):
         self.is_super: bool = is_super
 
     def copy(self) -> 'Wall':
+        """Create a copy of Wall object"""
         copy_object = Wall(self.pos, self.is_super)
         return copy_object
 
     def draw(self, surface: ut.Image) -> None:
+        """Draw Wall object on the surface"""
         draw_pos = (self.pos[0] * ut.TILE, self.pos[1] * ut.TILE)
         surface.blit(self.img[0], draw_pos)
 
@@ -235,10 +251,7 @@ class Wall(BasicObject):
               level_map: List[BasicObject],
               enemies: List[Enemy],
               tempies: List[TempEffect]) -> None:
-        '''Interact with game surface
-
-        - Check if ball is out of surface, repose it and change acceleration''
-        '''
+        """Process Wall interaction with other objects"""
         if player.pos[0] == self.pos[0] and player.pos[1] == self.pos[1]:
             # TODO: add bonuses
             new_x = player.pos[0]-player.speed[0]
@@ -260,8 +273,10 @@ class Wall(BasicObject):
 
 
 class Spikes(BasicObject):
+    """Spikes game object."""
     def __init__(self, pos: ut.Coord = (0, 0),
                  is_activated: bool = True) -> None:
+        """Initialise Spikes"""
         super().__init__([images.SPIKE_IMG], pos, (0, 0))
         self.dimg: List[ut.Image] = [images.DSPIKE_IMG]
         self.is_triggered: bool = False
@@ -269,14 +284,17 @@ class Spikes(BasicObject):
         self.is_init_activated: bool = is_activated
 
     def copy(self) -> 'Spikes':
+        """Create new copy of Spikes object"""
         copy_object = Spikes(self.pos, self.is_activated)
         return copy_object
 
     def reset(self) -> None:
+        """Reset Spikes object to initial values"""
         super().reset()
         self.is_activated = self.is_init_activated
 
     def draw(self, surface: ut.Image) -> None:
+        """Draw Spikes object on the surface"""
         draw_pos = (self.pos[0] * ut.TILE, self.pos[1] * ut.TILE)
         if self.is_activated:
             surface.blit(self.img[0], draw_pos)
@@ -287,10 +305,7 @@ class Spikes(BasicObject):
               level_map: List[BasicObject],
               enemies: List[Enemy],
               tempies: List[TempEffect]) -> None:
-        '''Interact with game surface
-
-        - Check if ball is out of surface, repose it and change acceleration''
-        '''
+        """Process Spikes interaction with other objects"""
         if player.pos[0] == self.pos[0] and player.pos[1] == self.pos[1]:
             if self.is_activated:
                 player.is_dead = True
@@ -301,10 +316,12 @@ class Spikes(BasicObject):
 
 
 class Explosion(TempEffect):
+    """Explosion object - temporary effect from the bomb"""
     def __init__(self, pos: ut.Coord = (0, 0),
                  esize: int = 2, duration: Tuple[int, int] = (0, 7),
                  etype: ut.ExplosionType = ut.ExplosionType.CROSS,
                  fbounds: ut.FieldBounds = ut.FieldBounds.RECT) -> None:
+        """Initialise Explosion object"""
         super().__init__(images.BOOM_IMG, pos, (0, 0))
         self.esizex: Tuple[int, int] = (pos[0]-esize, pos[0]+esize)
         self.esizey: Tuple[int, int] = (pos[1]-esize, pos[1]+esize)
@@ -313,6 +330,7 @@ class Explosion(TempEffect):
         self.fbounds: ut.FieldBounds = fbounds
 
     def draw(self, surface: ut.Image) -> None:
+        """Draw Explosion object on the surface"""
         if self.duration[0] <= 2:
             img_to_draw = self.img[self.duration[0]]
         elif self.duration[1]-self.duration[0] <= 3:
@@ -343,6 +361,7 @@ class Explosion(TempEffect):
 
     def action(self, level_map: List[BasicObject],
                tempies: List[TempEffect]) -> None:
+        """Perform Explosion's action"""
         curr_duration: int = self.duration[0]
         curr_duration += 1
         if curr_duration >= self.duration[1]:
@@ -350,6 +369,7 @@ class Explosion(TempEffect):
         self.duration = curr_duration, self.duration[1]
 
     def includes(self, pos: ut.Coord) -> bool:
+        """Check if given position is included in Explosion's area"""
         if self.etype == ut.ExplosionType.CROSS:
             if self.fbounds == ut.FieldBounds.RECT:
                 if pos[0] == self.pos[0]:
@@ -369,10 +389,7 @@ class Explosion(TempEffect):
               level_map: List[BasicObject],
               enemies: List[Enemy],
               tempies: List[TempEffect]) -> None:
-        '''Interact with game surface
-
-        - Check if ball is out of surface, repose it and change acceleration''
-        '''
+        """Process Explosion interaction with other objects"""
 
         if self.includes(player.pos):
             player.is_dead = True
@@ -396,14 +413,19 @@ class Explosion(TempEffect):
 
 
 class Bomb(BasicObject):
+    """Bomb game object"""
     def __init__(self, pos: ut.Coord = (0, 0),
                  duration: int = 20, bomb_range: int = 2) -> None:
+        """Initialise Bomb object"""
+
         super().__init__(images.BBOMB_IMG, pos, (0, 0))
         self.duration: int = duration
         self.bomb_range: int = bomb_range
 
     def action(self, level_map: List[BasicObject],
                tempies: List[TempEffect]) -> None:
+        """Perform Bomb action"""
+
         self.duration -= 1
         if self.duration <= 0:
             self.is_dead = True
@@ -412,10 +434,7 @@ class Bomb(BasicObject):
               level_map: List[BasicObject],
               enemies: List[Enemy],
               tempies: List[TempEffect]) -> None:
-        '''Interact with game surface
-
-        - Check if ball is out of surface, repose it and change acceleration''
-        '''
+        """Process Bomb interaction with other objects"""
 
         if player.pos[0] == self.pos[0] and player.pos[1] == self.pos[1]:
             # TODO: add bonuses
@@ -439,16 +458,20 @@ class Bomb(BasicObject):
 
     def destroy(self, level_map: List[BasicObject],
                 tempies: List[TempEffect]) -> None:
+        """Prepare for future deletion of Bomb object"""
         tempies.append(Explosion(self.pos, self.bomb_range))
 
 
 class Gold(BasicObject):
+    """Coin game object"""
     def __init__(self, pos: ut.Coord = (0, 0),
                  inc_val: int = 1) -> None:
+        """Initialise Gold object"""
         super().__init__(images.MONEY_IMG, pos, (0, 0))
         self.inc_val = inc_val
 
     def copy(self) -> 'Gold':
+        """Create new copy of Gold object"""
         copy_object = Gold(self.pos, self.inc_val)
         return copy_object
 
@@ -456,10 +479,7 @@ class Gold(BasicObject):
               level_map: List[BasicObject],
               enemies: List[Enemy],
               tempies: List[TempEffect]) -> None:
-        '''Interact with game surface
-
-        - Check if ball is out of surface, repose it and change acceleration''
-        '''
+        """Process Gold interaction with other objects"""
         if player.pos[0] == self.pos[0] and player.pos[1] == self.pos[1]:
             player.gold = player.gold[0]+self.inc_val, player.gold[1]
             self.is_dead = True

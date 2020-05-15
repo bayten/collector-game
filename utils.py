@@ -1,6 +1,13 @@
+'''
+utils.py -- utilities and constants submodule
+=============================================
+This is module, which mainly consists of constants and utility functions.
+'''
+
 import pygame  # type: ignore
 from enum import Enum
 from typing import Tuple, List
+
 
 BSIZE: Tuple[int, int] = (20, 20)
 TILE: int = 40
