@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-main.py -- main module
+run_me.py -- main module
 ======================
 This is main module, which contains main game classes and launches the game.
 """
-
 import pygame  # type: ignore
-import images
 import random
-import utils as ut
-import objects as objs
 from typing import List, Optional
-import gui
+
+import CollectorGame.images as images
+import CollectorGame.utils as ut
+import CollectorGame.objects as objs
+import CollectorGame.gui as gui
 
 DEF_PLAYER_CONFIG = ((0, 0), (3, 3), (0, 10))
 
@@ -346,11 +346,7 @@ class CollectorGame(GameMode):
         self.init_enemies = [e.copy() for e in self.enemies]
 
 
-def __main__():
+def run_game() -> None:
     """Main game code"""
     NewUniverse = Universe(ut.BSIZE, ut.TILE)
     NewUniverse.ProcessGame(CollectorGame())
-
-
-if __name__ == '__main__':
-    __main__()

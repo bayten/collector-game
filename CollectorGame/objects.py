@@ -4,9 +4,10 @@ objects.py -- submodule for game object classes
 This is module, which mainly consists of game object classes.
 """
 
-import utils as ut
 from typing import List, Tuple
-import images
+
+import CollectorGame.images as images
+import CollectorGame.utils as ut
 
 
 class BasicObject:
