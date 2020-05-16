@@ -7,7 +7,7 @@ This is module, which mainly consists of constants and utility functions.
 import pygame  # type: ignore
 from enum import Enum
 from typing import Tuple, List
-
+from os.path import abspath, dirname
 
 BSIZE: Tuple[int, int] = (20, 20)
 TILE: int = 40
@@ -24,7 +24,7 @@ Trigger = Tuple[str, int, int]
 
 PLAYER_CONFIG = ((0, 0), (3, 3), (0, 10))
 
-GAME_FONT = 'CollectorGame/FortunataCYR.ttf'
+GAME_FONT = dirname(abspath(__file__))+'/FortunataCYR.ttf'
 
 UselessAdvices: List[str] = [
     'Шипы опасны',

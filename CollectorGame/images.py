@@ -6,9 +6,10 @@ This is module, where all image resources are loaded for future use.
 
 from pygame import image as im  # type: ignore
 from typing import List
+from os.path import abspath, dirname
 import CollectorGame.utils as ut
 
-DIR = r'CollectorGame/images/'
+DIR = dirname(abspath(__file__))+r'/images/'
 
 
 # game sprites
