@@ -4,11 +4,10 @@ main.py -- stub for main function
 =================================
 This is a stub for proper game launch. Nothing interesting here.
 """
-from CollectorGame import run_me
+from CollectorGame import run_me  # type: ignore
 
 
 def __main__():
-
     run_me.run_game()
 
 

@@ -15,8 +15,14 @@ class GuiObject:
     def __init__(self, pos: ut.Coord, size: ut.Size,
                  trigger_name: Optional[str] = None) -> None:
         """Initialise GUI object"""
-        self.pos: ut.Coord = pos
-        self.size: ut.Size = size
+        x = max(0, min(pos[0], ut.BSIZE[0]*ut.TILE-1))
+        y = max(0, min(pos[1], ut.BSIZE[1]*ut.TILE-1))
+        self.pos: ut.Coord = (x, y)
+
+        sx = max(1, min(size[0], ut.BSIZE[0]*ut.TILE-1))
+        sy = max(1, min(size[1], ut.BSIZE[1]*ut.TILE-1))
+        self.size: ut.Size = (sx, sy)
+
         self.focus: bool = False
         self.is_pressed: bool = False
         self.trigger_name: Optional[str] = trigger_name
@@ -67,6 +73,9 @@ class TextBox(GuiObject):
                  color_p: pygame.Color = (0, 0, 0)) -> None:
         """Initialise textbox"""
         super().__init__(pos, size)
+        if not pygame.font.get_init():
+            pygame.font.init()
+
         self.text: str = text
         self.color: pygame.Color = color
         self.color_p: pygame.Color = color_p
@@ -126,29 +135,30 @@ class Button(GuiObject):
                  size: ut.Size,
                  tname: str,
                  image: ut.Image,
-                 image_pressed: Optional[ut.Image] = None,
+                 image_p: Optional[ut.Image] = None,
                  text: Optional[Tuple[str, str]] = None) -> None:
         """Initialise Button element"""
         super().__init__(pos, size, tname)
 
-        self.image: ut.Image = pygame.transform.scale(image, size)
+        self.image: ut.Image = pygame.transform.scale(image, self.size)
         self.image_pressed: Optional[ut.Image] = None
-        if image_pressed:
-            self.image_pressed = pygame.transform.scale(image_pressed, size)
+        if image_p:
+            self.image_pressed = pygame.transform.scale(image_p, self.size)
 
         self.text: Optional[TextBox] = None
         if text:
-            text_pos_x = int(pos[0] + 0.08*size[0])
-            text_pos_y = int(pos[1] + 0.25*size[1])
-            text_size = int(0.85*size[0]), int(0.8*size[1])
+            text_pos_x = int(self.pos[0] + 0.08*self.size[0])
+            text_pos_y = int(self.pos[1] + 0.25*self.size[1])
+            text_size = int(0.85*self.size[0]), int(0.8*self.size[1])
             self.text = TextBox((text_pos_x, text_pos_y), text_size, *text)
 
     def init_pdown(self, mouse_pos: ut.Coord,
                    triggers: Optional[List[ut.Trigger]] = None) -> None:
         """Process initial event of mouse key pressed down"""
-        self.is_pressed = True
-        if self.text:
-            self.text.is_pressed = True
+        if self.includes(mouse_pos):
+            self.is_pressed = True
+            if self.text:
+                self.text.is_pressed = True
 
     def init_pup(self, mouse_pos: ut.Coord,
                  triggers: Optional[List[ut.Trigger]] = None) -> None:
@@ -188,12 +198,19 @@ class MenuMode:
 
         self.menu_img: ut.Image = menu_img
         self.back_img: Optional[ut.Image] = None
-        self.menu_pos: ut.Coord = menu_pos  # left upper corner
+        x = max(0, min(menu_pos[0], ut.BSIZE[0] * ut.TILE - 1))
+        y = max(0, min(menu_pos[1], ut.BSIZE[1] * ut.TILE - 1))
+        self.menu_pos: ut.Coord = (x, y)  # left upper corner
         self.cursor_img: ut.Image = images.CURSOR_IMG
         self.gui: Optional[List[GuiObject]] = gui
         self.focused: Optional[int] = None
         self.pressed_down: bool = False
         self.triggers: Optional[List[ut.Trigger]] = triggers
+
+    def init(self, screen: ut.Image) -> None:
+        """What to do when entering this mode"""
+        pygame.mouse.set_visible(False)
+        self.back_img = screen.copy()
 
     def update_focus(self, mouse_pos: ut.Coord) -> None:
         """Calculate new focused GUI object, if possible"""
@@ -216,7 +233,7 @@ class MenuMode:
             self.focused = focus_candidates[0]
             self.gui[self.focused].focus = True
 
-    def Events(self, events: List[ut.Event],
+    def events(self, events: List[ut.Event],
                screen: ut.Image) -> bool:
         """Event parser: process all events from previous tick"""
         for event in events:
@@ -237,7 +254,7 @@ class MenuMode:
                     self.pressed_down = False
         return True
 
-    def Draw(self, screen: ut.Image) -> None:
+    def draw(self, screen: ut.Image) -> None:
         """Draw all GUI objects"""
         mouse_pos = pygame.mouse.get_pos()
         screen.blit(self.back_img, (0, 0))
@@ -248,15 +265,10 @@ class MenuMode:
 
         screen.blit(self.cursor_img, mouse_pos)
 
-    def Leave(self) -> Optional[List[ut.Trigger]]:
+    def leave(self) -> Optional[List[ut.Trigger]]:
         """What to do when leaving this mode"""
         pygame.mouse.set_visible(True)
         return self.triggers
-
-    def Init(self, screen: ut.Image) -> None:
-        """What to do when entering this mode"""
-        pygame.mouse.set_visible(False)
-        self.back_img = screen.copy()
 
 
 class CloseDialog(MenuMode):
@@ -283,23 +295,23 @@ class CloseDialog(MenuMode):
         self.gui: List[GuiObject] = [text, cls, acc]
         self.triggers: List[ut.Trigger] = triggers
 
-    def MainLoop(self, screen: ut.Image) -> bool:
+    def main_loop(self, screen: ut.Image) -> bool:
         """Subsequently process all procedures for CloseDialog"""
-        self.Init(screen)
+        self.init(screen)
         while True:
             events = pygame.event.get()
-            self.Events(events, screen)
-            self.Draw(screen)
+            self.events(events, screen)
+            self.draw(screen)
             pygame.display.flip()
 
             if self.triggers[0][1] == 1:
-                self.Leave()
+                self.leave()
                 return False
             elif self.triggers[1][1] == 1:
-                self.Leave()
+                self.leave()
                 return True
 
-    def Events(self, events: List[ut.Event],
+    def events(self, events: List[ut.Event],
                screen: ut.Image) -> bool:
         """Event parser: process all events from previous tick"""
         for event in events:
@@ -360,34 +372,34 @@ class SplashScreen(MenuMode):
         triggers = [('restart', 0, 2), ('menu', 0, 2)]
         self.triggers: List[ut.Trigger] = triggers
 
-    def MainLoop(self, screen: ut.Image) -> bool:
+    def main_loop(self, screen: ut.Image) -> bool:
         """Subsequently process all procedures for SplashScreen"""
-        self.Init(screen)
+        self.init(screen)
         while True:
             events = pygame.event.get()
-            game_trigger = self.Events(events, screen)
+            game_trigger = self.events(events, screen)
 
             if not game_trigger:
-                self.Leave()
+                self.leave()
                 return False
 
-            self.Draw(screen)
+            self.draw(screen)
             pygame.display.flip()
 
             if self.triggers[0][1] == 1:
-                self.Leave()
+                self.leave()
                 return True
             elif self.triggers[1][1] == 1:
-                self.Leave()
+                self.leave()
                 return False
 
-    def Events(self, events: ut.Event,
+    def events(self, events: ut.Event,
                screen: ut.Image) -> bool:
         """Event parser: process all events from previous tick"""
         for event in events:
             if event.type is pygame.QUIT:
                 dialog = CloseDialog()
-                if dialog.MainLoop(screen):
+                if dialog.main_loop(screen):
                     return False
             if event.type is pygame.MOUSEBUTTONDOWN:
                 self.update_focus(event.pos)

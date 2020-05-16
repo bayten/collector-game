@@ -22,6 +22,8 @@ Event = pygame.event.Event
 Clock = pygame.time.Clock
 Trigger = Tuple[str, int, int]
 
+PLAYER_CONFIG = ((0, 0), (3, 3), (0, 10))
+
 GAME_FONT = 'CollectorGame/FortunataCYR.ttf'
 
 UselessAdvices: List[str] = [
@@ -55,3 +57,12 @@ class FieldBounds(Enum):
 class ExplosionType(Enum):
     CROSS = 0,
     CIRCLE = 1
+
+
+def sign(a) -> int:
+    if a == 0:
+        return 0
+    if a > 0:
+        return 1
+    if a < 0:
+        return -1

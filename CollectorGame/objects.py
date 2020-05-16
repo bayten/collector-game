@@ -17,23 +17,31 @@ class BasicObject:
                  pos: ut.Coord = (0, 0),
                  speed: ut.Coord = (0, 0)) -> None:
         """Initialise game object"""
-        self.img: List[ut.Image] = img
-        self.pos: ut.Coord = pos
-        self.init_pos: ut.Coord = pos
-        self.speed: ut.Coord = speed
-        self.init_speed: ut.Coord = speed
-        self.draw_count: float = pos[1] % len(img)
+
+        self.img: List[ut.Image] = img if img else [images.BACK_IMG]
+        x = max(0, min(pos[0], ut.BSIZE[0]-1))
+        y = max(0, min(pos[1], ut.BSIZE[1]-1))
+        self.pos: ut.Coord = (x, y)
+        self.init_pos: ut.Coord = self.pos
+
+        vx = ut.sign(speed[0])*min(abs(speed[0]), ut.BSIZE[0]-1)
+        vy = ut.sign(speed[1])*min(abs(speed[1]), ut.BSIZE[1]-1)
+        self.speed: ut.Coord = (vx, vy)
+        self.init_speed: ut.Coord = self.speed
+        self.draw_count: float = pos[1] % len(self.img)
         self.is_dead: bool = False
 
     def copy(self) -> 'BasicObject':
         """Create new copy of object"""
-        copy_object = BasicObject(self.img.copy(), self.pos, self.speed)
+        copied_img = [img_sprite.copy() for img_sprite in self.img]
+        copy_object = BasicObject(copied_img, self.pos, self.speed)
         return copy_object
 
     def reset(self) -> None:
         """Reset parameters of game object to initial values"""
         self.pos = self.init_pos[0], self.init_pos[1]
         self.speed = self.init_speed[0], self.init_speed[1]
+        self.draw_count: float = self.pos[1] % len(self.img)
         self.is_dead = False
 
     def draw(self, surface: ut.Image) -> None:
@@ -54,7 +62,20 @@ class BasicObject:
               enemies: List['Enemy'],
               tempies: List['TempEffect']) -> None:
         """Process interaction of game object with other objects"""
-        pass
+        x, y = self.pos
+        if x < 0 or x >= ut.BSIZE[0]:
+            x %= ut.BSIZE[0]
+        if y < 0 or y >= ut.BSIZE[1]:
+            y %= ut.BSIZE[1]
+
+        vx, vy = self.speed
+        if abs(vx) >= ut.BSIZE[0]:
+            vx = 0
+        if abs(vy) >= ut.BSIZE[1]:
+            vy = 0
+
+        self.pos = x, y
+        self.speed = vx, vy
 
     def destroy(self, level_map: List['BasicObject'],
                 tempies: List['TempEffect']) -> None:
@@ -165,13 +186,15 @@ class Player(BasicObject):
         self.fimg: List[ut.Image] = images.FMAN_IMG
 
         self.set_bomb: bool = False
-        self.bombs: Tuple[int, int] = bombs
-        self.init_bombs: Tuple[int, int] = bombs
+        new_bombs = max(0, min(bombs[0], bombs[1])), bombs[1]
+        self.bombs: Tuple[int, int] = new_bombs
+        self.init_bombs: Tuple[int, int] = self.bombs
 
         self.duration: int = 5
 
-        self.gold: Tuple[int, int] = gold
-        self.init_gold: Tuple[int, int] = gold
+        new_gold = max(0, min(gold[0], gold[1])), gold[1]
+        self.gold: Tuple[int, int] = new_gold
+        self.init_gold: Tuple[int, int] = self.gold
 
         self.bonus: None = None
 
