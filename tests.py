@@ -404,10 +404,12 @@ def test_modes_GameMode() -> None:
 
 def test_modes_Universe() -> None:
     """Unit-test for Universe class"""
+    pass
 
 
 def test_modes_CollectorGame():
     """Unit-test for CollectorGame class"""
+    pass
 
 
 # ultimate test function

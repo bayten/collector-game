@@ -59,7 +59,27 @@ class ExplosionType(Enum):
     CIRCLE = 1
 
 
-def sign(a) -> int:
+def bfunc_minc(trigger_val: int, trigger_max_val: int) -> int:
+    """Button trigger update function: increase value with module"""
+    return (trigger_val+1) % trigger_max_val
+
+
+def bfunc_cinc(trigger_val: int, trigger_max_val: int) -> int:
+    """Button trigger update function: increase value with constraints"""
+    return min(trigger_val+1, trigger_max_val-1)
+
+
+def bfunc_mdec(trigger_val: int, trigger_max_val: int) -> int:
+    """Button trigger update function: decrease value with module"""
+    return (trigger_val+trigger_max_val-1) % trigger_max_val
+
+
+def bfunc_cdec(trigger_val: int, trigger_max_val: int) -> int:
+    """Button trigger update function: decrease value with constraints"""
+    return max(trigger_val-1, 0)
+
+
+def sign(a: int) -> int:
     if a == 0:
         return 0
     if a > 0:
