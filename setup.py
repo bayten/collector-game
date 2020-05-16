@@ -17,8 +17,8 @@ setuptools.setup(
     url="https://github.com/bayten/collector-game",
     packages=setuptools.find_packages(),
     package_data={
-        'collector-game': ['images/*',
-                           'FortunataCYR.ttf']
+        'CollectorGame': ['images/*',
+                          'FortunataCYR.ttf']
     },
     include_package_data=True,
     classifiers=[
