@@ -31,7 +31,12 @@ python setup.py bdist_wheel
 pip install dist/CollectorGame-0.0.1-py3-none-any.whl
 ```
 Готово! Теперь можно насладиться игрой, выполнив следующие команды в python!
-
+=======
+Далее с помощью pip установите ваш whl-файл с помощью команды:
+```
+pip install dist/CollectorGame-0.0.1-py3-none-any.whl
+```
+Готово! Теперь можно насладиться игрой, выполнив следующие команды:
 ```
 >>> from CollectorGame import run_me
 >>> run_me.run_game()
